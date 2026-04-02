@@ -1,0 +1,43 @@
+package net.flamgop.vulkanic.swapchain;
+
+import net.flamgop.vulkanic.util.Bitmaskable;
+
+import static org.lwjgl.vulkan.KHRSurface.*;
+
+public enum VulkanicSurfaceTransformFlag implements Bitmaskable<Integer> {
+    IDENTITY_KHR(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR),
+    ROTATE_90_KHR(VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR),
+    ROTATE_180_KHR(VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR),
+    ROTATE_270_KHR(VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR),
+    HORIZONTAL_MIRROR_KHR(VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR),
+    HORIZONTAL_MIRROR_ROTATE_90_KHR(VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR),
+    HORIZONTAL_MIRROR_ROTATE_180_KHR(VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR),
+    HORIZONTAL_MIRROR_ROTATE_270_KHR(VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR),
+    INHERIT_KHR(VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR)
+    ;
+
+    private final int flag;
+    VulkanicSurfaceTransformFlag(int flag) {
+        this.flag = flag;
+    }
+
+    @Override
+    public Integer flag() {
+        return flag;
+    }
+
+    public static VulkanicSurfaceTransformFlag valueOf(int value) {
+        return switch (value) {
+            case VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR -> IDENTITY_KHR;
+            case VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR -> ROTATE_90_KHR;
+            case VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR -> ROTATE_180_KHR;
+            case VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR -> ROTATE_270_KHR;
+            case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR -> HORIZONTAL_MIRROR_KHR;
+            case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR -> HORIZONTAL_MIRROR_ROTATE_90_KHR;
+            case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR -> HORIZONTAL_MIRROR_ROTATE_180_KHR;
+            case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR -> HORIZONTAL_MIRROR_ROTATE_270_KHR;
+            case VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR -> INHERIT_KHR;
+            default -> throw new IllegalArgumentException("Illegal value: " + value);
+        };
+    }
+}

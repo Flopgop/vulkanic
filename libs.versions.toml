@@ -1,0 +1,22 @@
+[versions]
+jetbrains-annotations = "26.1.0"
+
+lwjgl = "3.4.1"
+joml = "1.10.8"
+
+[libraries]
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+
+lwjgl-bom = { group = "org.lwjgl", name = "lwjgl-bom", version.ref = "lwjgl" }
+
+lwjgl = { group = "org.lwjgl", name = "lwjgl" }
+lwjgl-vma = { group = "org.lwjgl", name = "lwjgl-vma" }
+lwjgl-glfw = { group = "org.lwjgl", name = "lwjgl-glfw" }
+lwjgl-vulkan = { group = "org.lwjgl", name = "lwjgl-vulkan" }
+
+# these require a classifier to show they're natives, but I can't just do that on the above because I guess it redeclares their dependency notation or whatever. idk
+lwjgl-natives = { group = "org.lwjgl", name = "lwjgl" }
+lwjgl-vma-natives = { group = "org.lwjgl", name = "lwjgl-vma" }
+lwjgl-glfw-natives = { group = "org.lwjgl", name = "lwjgl-glfw" }
+
+joml = { group = "org.joml", name = "joml", version.ref = "joml" }
