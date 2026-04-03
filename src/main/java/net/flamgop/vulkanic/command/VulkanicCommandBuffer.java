@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.memory.VulkanicIndexType;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceRange;
 import net.flamgop.vulkanic.pipeline.VulkanicPipeline;
@@ -147,14 +148,16 @@ public class VulkanicCommandBuffer implements AutoCloseable {
         vkCmdSetStencilReference(handle, faceMask, reference);
     }
 
-    public void bindVertexBuffers(int firstBinding, VulkanicBuffer[] buffers, long[] offsets) {
+    public void bindVertexBuffers(int firstBinding, @NotNull VulkanicBuffer @NotNull [] buffers, long @NotNull [] offsets) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            LongBuffer pBuffers = stack.callocLong(buffers.length);
-            pBuffers.put(Arrays.stream(buffers).mapToLong(VulkanicBuffer::handle).toArray());
-            LongBuffer pOffsets = stack.callocLong(offsets.length);
-            pOffsets.put(offsets);
+            LongBuffer pBuffers = stack.longs(Arrays.stream(buffers).mapToLong(VulkanicBuffer::handle).toArray());
+            LongBuffer pOffsets = stack.longs(offsets);
             vkCmdBindVertexBuffers(handle, firstBinding, pBuffers, pOffsets);
         }
+    }
+
+    public void bindIndexBuffer(@NotNull VulkanicBuffer buffer, long offset, @NotNull VulkanicIndexType indexType) {
+        vkCmdBindIndexBuffer(handle, buffer.handle(), offset, indexType.qualifier());
     }
 
     public void draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance) {

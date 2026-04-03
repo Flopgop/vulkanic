@@ -5,6 +5,7 @@ import net.flamgop.vulkanic.memory.image.VulkanicImageCreateFlag;
 import net.flamgop.vulkanic.memory.image.VulkanicImageTiling;
 import net.flamgop.vulkanic.memory.image.VulkanicImageType;
 import net.flamgop.vulkanic.memory.image.VulkanicImageUsageFlag;
+import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.swapchain.VulkanicSurfaceTransformFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
@@ -81,10 +82,10 @@ public class VulkanicPhysicalDevice {
     }
 
 
-    public @NotNull VulkanicSurfaceCapabilities surfaceCapabilities(long surface) {
+    public @NotNull VulkanicSurfaceCapabilities surfaceCapabilities(@NotNull VulkanicSurface surface) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSurfaceCapabilitiesKHR dst = VkSurfaceCapabilitiesKHR.calloc(stack);
-            KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface, dst);
+            KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface.handle(), dst);
             return new VulkanicSurfaceCapabilities(
                     dst.minImageCount(), dst.maxImageCount(),
                     VkUtil.toVector2i(dst.currentExtent()), VkUtil.toVector2i(dst.minImageExtent()), VkUtil.toVector2i(dst.maxImageExtent()), dst.maxImageArrayLayers(),
@@ -95,8 +96,8 @@ public class VulkanicPhysicalDevice {
     }
 
     @Contract(mutates = "param1", value = "_, _ -> param1")
-    public @NotNull VkSurfaceCapabilitiesKHR surfaceCapabilities2(@NotNull VkSurfaceCapabilitiesKHR dst, long surface) {
-        KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface, dst);
+    public @NotNull VkSurfaceCapabilitiesKHR surfaceCapabilities2(@NotNull VkSurfaceCapabilitiesKHR dst, @NotNull VulkanicSurface surface) {
+        KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface.handle(), dst);
         return dst;
     }
 
@@ -138,20 +139,22 @@ public class VulkanicPhysicalDevice {
         return dst;
     }
 
-    @Contract(mutates = "param1", value = "_ -> new")
-    public @NotNull List<VulkanicQueueFamilyProperties> queueFamilyProperties(MemoryStack stack) {
-        IntBuffer pCount = stack.ints(0);
-        vkGetPhysicalDeviceQueueFamilyProperties(this.handle, pCount, null);
-        VkQueueFamilyProperties.Buffer pProperties = VkQueueFamilyProperties.calloc(pCount.get(0), stack);
-        vkGetPhysicalDeviceQueueFamilyProperties(this.handle, pCount, pProperties);
+    @Contract(value = "-> new")
+    public @NotNull List<VulkanicQueueFamilyProperties> queueFamilyProperties() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer pCount = stack.ints(0);
+            vkGetPhysicalDeviceQueueFamilyProperties(this.handle, pCount, null);
+            VkQueueFamilyProperties.Buffer pProperties = VkQueueFamilyProperties.calloc(pCount.get(0), stack);
+            vkGetPhysicalDeviceQueueFamilyProperties(this.handle, pCount, pProperties);
 
-        List<VulkanicQueueFamilyProperties> properties = new ArrayList<>();
-        for (int i = 0; i < pProperties.capacity(); i++) {
-            properties.add(new VulkanicQueueFamilyProperties(
-                    new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toVector3i(pProperties.get(i).minImageTransferGranularity())
-            ));
+            List<VulkanicQueueFamilyProperties> properties = new ArrayList<>();
+            for (int i = 0; i < pProperties.capacity(); i++) {
+                properties.add(new VulkanicQueueFamilyProperties(
+                        new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toVector3i(pProperties.get(i).minImageTransferGranularity())
+                ));
+            }
+            return properties;
         }
-        return properties;
     }
 
     @ApiStatus.Internal

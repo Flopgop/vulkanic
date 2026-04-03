@@ -11,6 +11,7 @@ import net.flamgop.vulkanic.pipeline.VulkanicComputePipeline;
 import net.flamgop.vulkanic.pipeline.VulkanicGraphicsPipeline;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
+import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.swapchain.*;
 import net.flamgop.vulkanic.sync.VulkanicFence;
 import net.flamgop.vulkanic.sync.VulkanicFenceCreateFlag;
@@ -347,7 +348,7 @@ public class VulkanicDevice implements AutoCloseable {
                 pPushConstantRanges.get(i)
                         .stageFlags(pushConstantRange.stageFlags().mask())
                         .offset(pushConstantRange.offset())
-                        .size(pushConstantRange.size());
+                        .size((int) pushConstantRange.size().bytes()); // note: push constants can't actually be larger than like 512 bytes usually
             }
 
             LongBuffer pSetLayouts = stack.callocLong(setLayouts.size());
@@ -622,7 +623,7 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     public @NotNull VulkanicSwapchain createSwapchain(
-            long surface, int minImageCount,
+            @NotNull VulkanicSurface surface, int minImageCount,
             @NotNull VulkanicFormat imageFormat, @NotNull VulkanicColorSpace imageColorSpace,
             int width, int height, int imageArrayLayers,
             @NotNull EnumIntBitset<VulkanicImageUsageFlag> imageUsage,
@@ -635,7 +636,7 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     public @NotNull VulkanicSwapchain createSwapchain(
-            long surface, int minImageCount,
+            @NotNull VulkanicSurface surface, int minImageCount,
             @NotNull VulkanicFormat imageFormat, @NotNull VulkanicColorSpace imageColorSpace,
             int width, int height, int imageArrayLayers,
             @NotNull EnumIntBitset<VulkanicImageUsageFlag> imageUsage,
@@ -650,7 +651,7 @@ public class VulkanicDevice implements AutoCloseable {
             LongBuffer pSwapchain = stack.callocLong(1);
             VkSwapchainCreateInfoKHR swapchainCreateInfoKHR = VkSwapchainCreateInfoKHR.calloc(stack)
                     .sType$Default()
-                    .surface(surface)
+                    .surface(surface.handle())
                     .minImageCount(minImageCount)
                     .imageFormat(imageFormat.qualifier())
                     .imageColorSpace(imageColorSpace.qualifier())

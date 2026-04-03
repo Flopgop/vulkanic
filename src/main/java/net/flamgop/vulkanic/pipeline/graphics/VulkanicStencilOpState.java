@@ -18,4 +18,14 @@ public record VulkanicStencilOpState(
                 .writeMask(writeMask)
                 .reference(reference);
     }
+
+    public VulkanicStencilOpState() {
+        this(
+                VulkanicStencilOp.KEEP,
+                VulkanicStencilOp.KEEP,
+                VulkanicStencilOp.KEEP,
+                VulkanicCompareOp.NEVER,
+                0, 0, 0
+        );
+    }
 }

@@ -14,6 +14,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.*;
 import org.lwjgl.vulkan.*;
 
+import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 
 public class VulkanicAllocator implements AutoCloseable {
@@ -57,6 +58,10 @@ public class VulkanicAllocator implements AutoCloseable {
 
             return VK12.vkGetBufferDeviceAddress(device.handle(), addressInfo);
         }
+    }
+
+    public void copyMemoryToAllocation(@NotNull ByteBuffer memory, long allocation, long offset) {
+        Vma.vmaCopyMemoryToAllocation(handle, memory, allocation, offset);
     }
 
     public void invalidateAllocation(long allocation) {
@@ -133,6 +138,7 @@ public class VulkanicAllocator implements AutoCloseable {
             int[] queueFamilyIndices,
 
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
+        if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
         try (MemoryStack stack = MemoryStack.stackPush()) {
 
             VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)

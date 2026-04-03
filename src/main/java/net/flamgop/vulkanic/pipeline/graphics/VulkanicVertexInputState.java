@@ -18,7 +18,7 @@ public record VulkanicVertexInputState(
             VulkanicInputAttributeDescription attribute = this.attributes.get(i);
             attribute.get(attributes.get(i));
         }
-        VkVertexInputBindingDescription.Buffer bindings = VkVertexInputBindingDescription.calloc(this.attributes.size(), stack);
+        VkVertexInputBindingDescription.Buffer bindings = VkVertexInputBindingDescription.calloc(this.bindings.size(), stack);
         for (int i = 0; i < this.bindings.size(); i++) {
             VulkanicInputBindingDescription binding = this.bindings.get(i);
             binding.get(bindings.get(i));
