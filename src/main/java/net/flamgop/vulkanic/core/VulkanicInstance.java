@@ -1,14 +1,18 @@
 package net.flamgop.vulkanic.core;
 
+import net.flamgop.vulkanic.core.debug.VulkanicDebugCallbackData;
+import net.flamgop.vulkanic.core.debug.VulkanicDebugLabel;
+import net.flamgop.vulkanic.core.debug.VulkanicDebugMessenger;
+import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
+import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
 import org.jetbrains.annotations.*;
+import org.joml.Vector4f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.vulkan.VK10;
-import org.lwjgl.vulkan.VkInstance;
-import org.lwjgl.vulkan.VkInstanceCreateInfo;
+import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -22,14 +26,18 @@ public class VulkanicInstance implements AutoCloseable {
     private final @Unmodifiable @NotNull List<String> enabledExtensions;
     private final VkInstance handle;
 
-    public VulkanicInstance(@NotNull VulkanicApplicationInfo applicationInfo, @NotNull Collection<String> layers, @NotNull Collection<String> extensions) {
+    public VulkanicInstance(@NotNull VulkanicApplicationInfo applicationInfo, @NotNull Collection<String> layers, @NotNull Collection<String> extensions, @Nullable VulkanicDebugMessenger debugMessenger) {
         this.applicationInfo = applicationInfo;
         try (MemoryStack stack = MemoryStack.stackPush()) {
+
+            if (debugMessenger != null && extensions.stream().noneMatch(extension -> extension.equals(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))) throw new UnsupportedOperationException("Cannot use a debug messenger without the VK_EXT_debug_utils extension");
+
             PointerBuffer ret = stack.callocPointer(1);
             PointerBuffer layersBuf = stack.callocPointer(layers.size());
             PointerBuffer extensionsBuf = stack.callocPointer(extensions.size());
             VkUtil.copyToBuffer(layersBuf, stack, layers);
             VkUtil.copyToBuffer(extensionsBuf, stack, extensions);
+
             layersBuf.flip();
             extensionsBuf.flip();
 
@@ -38,6 +46,76 @@ public class VulkanicInstance implements AutoCloseable {
                     .pApplicationInfo(applicationInfo.calloc(stack))
                     .ppEnabledLayerNames(layersBuf)
                     .ppEnabledExtensionNames(extensionsBuf);
+
+            if (debugMessenger != null) {
+                VkDebugUtilsMessengerCreateInfoEXT createInfoEXT = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack)
+                        .sType$Default()
+                        .messageSeverity(
+                                EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                        EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                                        EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                        EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+                        )
+                        .messageType(
+                                EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                        EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                        EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+                        )
+                        .pfnUserCallback((messageSeverity, messageTypes, pCallbackData, _) -> {
+                            if (pCallbackData == 0) return VK10.VK_FALSE;
+                            VkDebugUtilsMessengerCallbackDataEXT callbackDataEXT = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
+                            List<VulkanicDebugLabel> queueLabels = new ArrayList<>();
+                            List<VulkanicDebugLabel> commandBufferLabels = new ArrayList<>();
+                            List<VulkanicDebugObjectNameInfo> objects = new ArrayList<>();
+
+                            VkDebugUtilsLabelEXT.Buffer pQueueLabels = callbackDataEXT.pQueueLabels();
+                            if (pQueueLabels != null) {
+                                for (VkDebugUtilsLabelEXT label : pQueueLabels) {
+                                    queueLabels.add(new VulkanicDebugLabel(
+                                            label.pLabelNameString(),
+                                            new Vector4f(label.color())
+                                    ));
+                                }
+                            }
+
+                            VkDebugUtilsLabelEXT.Buffer pCommandBufferLabels = callbackDataEXT.pCmdBufLabels();
+                            if (pCommandBufferLabels != null) {
+                                for (VkDebugUtilsLabelEXT label : pCommandBufferLabels) {
+                                    commandBufferLabels.add(new VulkanicDebugLabel(
+                                            label.pLabelNameString(),
+                                            new Vector4f(label.color())
+                                    ));
+                                }
+                            }
+
+                            VkDebugUtilsObjectNameInfoEXT.Buffer pObjects = callbackDataEXT.pObjects();
+                            if (pObjects != null) {
+                                for (VkDebugUtilsObjectNameInfoEXT name : pObjects) {
+                                    objects.add(new VulkanicDebugObjectNameInfo(
+                                            VulkanicObjectType.valueOf(name.objectType()),
+                                            name.objectHandle(),
+                                            name.pObjectNameString()
+                                    ));
+                                }
+                            }
+
+                            VulkanicDebugCallbackData callbackData = new VulkanicDebugCallbackData(
+                                    callbackDataEXT.pMessageIdNameString(),
+                                    callbackDataEXT.messageIdNumber(),
+                                    callbackDataEXT.pMessageString(),
+                                    queueLabels, commandBufferLabels, objects
+                            );
+                            return debugMessenger.message(new EnumIntBitset<>(messageSeverity), new EnumIntBitset<>(messageTypes), callbackData) ? VK10.VK_TRUE : VK10.VK_FALSE;
+                        });
+                if (extensions.stream().anyMatch(extension -> extension.equals(EXTDeviceAddressBindingReport.VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME)))
+                    createInfoEXT.messageType(
+                            EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                    EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                    EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                    EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT
+                    );
+                createInfo.pNext(createInfoEXT.address());
+            }
 
             this.enabledLayers = List.copyOf(layers);
             this.enabledExtensions = List.copyOf(extensions);

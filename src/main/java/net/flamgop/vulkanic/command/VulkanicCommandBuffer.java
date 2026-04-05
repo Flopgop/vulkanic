@@ -409,10 +409,38 @@ public class VulkanicCommandBuffer implements AutoCloseable {
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
             @NotNull VulkanicImageLayout newLayout,
+            int baseMipLevel, int numMipLevels
+    ) {
+        transitionImageLayout(image, oldLayout, newLayout,
+                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
+                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
+                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
+                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
+                baseMipLevel, numMipLevels
+        );
+    }
+
+    public void transitionImageLayout(
+            @NotNull VulkanicImage image,
+            @NotNull VulkanicImageLayout oldLayout,
+            @NotNull VulkanicImageLayout newLayout,
             @NotNull EnumLongBitset<VulkanicPipelineStageFlag> srcStage,
             @NotNull EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
             @NotNull EnumLongBitset<VulkanicPipelineStageFlag> dstStage,
             @NotNull EnumLongBitset<VulkanicAccessFlag> dstAccessMask
+    ) {
+        transitionImageLayout(image, oldLayout, newLayout, srcStage, srcAccessMask, dstStage, dstAccessMask, 0, -1);
+    }
+
+    public void transitionImageLayout(
+            @NotNull VulkanicImage image,
+            @NotNull VulkanicImageLayout oldLayout,
+            @NotNull VulkanicImageLayout newLayout,
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> srcStage,
+            @NotNull EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> dstStage,
+            @NotNull EnumLongBitset<VulkanicAccessFlag> dstAccessMask,
+            int baseMipLevel, int numMipLevels
     ) {
         pipelineBarrier(new VulkanicDependencyInfo(
                 EnumIntBitset.of(),
@@ -426,7 +454,7 @@ public class VulkanicCommandBuffer implements AutoCloseable {
                                 dstAccessMask,
                                 oldLayout, newLayout,
                                 VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-                                image, new VulkanicImageSubresourceRange(image.aspectMask(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS)
+                                image, new VulkanicImageSubresourceRange(image.aspectMask(), baseMipLevel, numMipLevels, 0, VK_REMAINING_ARRAY_LAYERS)
                         )
                 )
         ));
