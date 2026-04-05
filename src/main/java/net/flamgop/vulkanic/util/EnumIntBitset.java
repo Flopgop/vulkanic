@@ -3,6 +3,9 @@ package net.flamgop.vulkanic.util;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public record EnumIntBitset<T extends Enum<T> & Bitmaskable<Integer>>(Integer mask) implements Bitset<Integer> {
 
     public EnumIntBitset(@NotNull T[] constants) {
@@ -51,6 +54,13 @@ public record EnumIntBitset<T extends Enum<T> & Bitmaskable<Integer>>(Integer ma
 
     public boolean some() {
         return mask != 0;
+    }
+
+    public @NotNull String toFriendlyString(Class<T> clazz) {
+        return Stream.of(clazz.getEnumConstants())
+                .filter(this::contains)
+                .map(Enum::name)
+                .collect(Collectors.joining("|"));
     }
 
     @Override

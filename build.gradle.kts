@@ -8,7 +8,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly(libs.jetbrains.annotations)
+    compileOnlyApi(libs.jetbrains.annotations)
+    api(libs.jspecify)
 
     api(libs.joml)
     implementation(platform(libs.lwjgl.bom))

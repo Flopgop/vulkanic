@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -314,6 +315,15 @@ public class VulkanicDevice implements AutoCloseable {
 
     public void destroyImageView(@NotNull VulkanicImageView imageView) {
         VK11.vkDestroyImageView(this.handle, imageView.handle(), null);
+    }
+
+    public @NotNull VulkanicShaderModule createShaderModule(byte @NotNull [] code) {
+        ByteBuffer pCode = MemoryUtil.memAlloc(code.length);
+        pCode.put(code);
+        pCode.flip();
+        VulkanicShaderModule module = createShaderModule(pCode);
+        MemoryUtil.memFree(pCode);
+        return module;
     }
 
     public @NotNull VulkanicShaderModule createShaderModule(@NotNull ByteBuffer pCode) {
