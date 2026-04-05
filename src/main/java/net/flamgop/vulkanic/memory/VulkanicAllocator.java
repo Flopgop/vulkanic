@@ -26,7 +26,7 @@ public class VulkanicAllocator implements AutoCloseable {
 
     public VulkanicAllocator(@NotNull VulkanicInstance instance, @NotNull VulkanicPhysicalDevice physicalDevice, @NotNull VulkanicDevice device) {
         this.device = device;
-        supportsBufferDeviceAddress = this.device.features().bufferDeviceAddress();
+        supportsBufferDeviceAddress = this.device.features().supportsBufferDeviceAddress();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VmaVulkanFunctions functions = VmaVulkanFunctions.calloc(stack)
                     .set(instance.handle(), device.handle());
@@ -98,6 +98,12 @@ public class VulkanicAllocator implements AutoCloseable {
             LongBuffer pBuffer = stack.callocLong(1);
             PointerBuffer pAllocation = stack.callocPointer(1);
             VmaAllocationInfo pAllocationInfo = VmaAllocationInfo.calloc(stack);
+
+            if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS)) {
+                if (!this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer with usage SHADER_DEVICE_ADDRESS because this allocator does not support buffer device address.");
+            } else {
+                if (this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer without usage SHADER_DEVICE_ADDRESS because this allocator requires buffer device address.");
+            }
 
             VkBufferCreateInfo pBufferCreateInfo = VkBufferCreateInfo.calloc(stack)
                     .sType$Default()

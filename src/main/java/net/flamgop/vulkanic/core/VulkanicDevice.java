@@ -46,7 +46,7 @@ public class VulkanicDevice implements AutoCloseable {
 
     private final List<VulkanicQueueFamily> queueFamilies;
 
-    private final List<String> enabledExtensions;
+    private final Collection<String> enabledExtensions;
     private final List<String> enabledLayers;
 
     public VulkanicDevice(
@@ -61,7 +61,7 @@ public class VulkanicDevice implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pDevice = stack.callocPointer(1);
 
-            List<String> requiredExtensions = features.requiredExtensions();
+            List<String> requiredExtensions = new ArrayList<>(features.requiredExtensions());
             requiredExtensions.addAll(extensions);
 
             this.enabledExtensions = requiredExtensions;
@@ -92,7 +92,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .ppEnabledLayerNames(layersBuf)
                     .ppEnabledExtensionNames(extensionsBuf)
                     .pQueueCreateInfos(pQueueCreateInfos)
-                    .pNext(features.pNext(stack));
+                    .pNext(features.pNext());
 
             VkUtil.check(VK11.vkCreateDevice(physicalDevice.handle(), ci, null, pDevice));
             handle = new VkDevice(pDevice.get(0), physicalDevice.handle(), ci);
@@ -104,7 +104,7 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    private static void assertSupportsAllExtensions(VulkanicPhysicalDevice physicalDevice, List<String> extensions) {
+    private static void assertSupportsAllExtensions(VulkanicPhysicalDevice physicalDevice, Collection<String> extensions) {
         List<VulkanicExtensionProperties> extensionProperties = physicalDevice.supportedExtensions();
         Set<String> availableExtensions = extensionProperties.stream()
                 .map(VulkanicExtensionProperties::name)
@@ -373,7 +373,7 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     @SuppressWarnings("resource")
-    public @NotNull VulkanicDescriptorSetLayout createDescriptorSetLayout(@NotNull List<@NotNull VulkanicDescriptorSetLayoutBinding> bindings) {
+    public @NotNull VulkanicDescriptorSetLayout createDescriptorSetLayout(@NotNull EnumIntBitset<VulkanicDescriptorSetLayoutCreateFlag> flags, @NotNull List<@NotNull VulkanicDescriptorSetLayoutBinding> bindings) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDescriptorSetLayoutBinding.Buffer pBindings = VkDescriptorSetLayoutBinding.calloc(bindings.size(), stack);
             for (int i = 0; i < bindings.size(); i++) {
@@ -393,6 +393,7 @@ public class VulkanicDevice implements AutoCloseable {
 
             VkDescriptorSetLayoutCreateInfo createInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack)
                     .sType$Default()
+                    .flags(flags.mask())
                     .pBindings(pBindings);
 
             LongBuffer pSetLayout = stack.callocLong(1);

@@ -5,14 +5,11 @@ import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicIndexType;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceRange;
-import net.flamgop.vulkanic.pipeline.VulkanicPipeline;
-import net.flamgop.vulkanic.pipeline.VulkanicPipelineBindPoint;
-import net.flamgop.vulkanic.pipeline.VulkanicPipelineLayout;
+import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.memory.VulkanicBuffer;
 import net.flamgop.vulkanic.memory.image.VulkanicFilter;
 import net.flamgop.vulkanic.memory.image.VulkanicImage;
 import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
-import net.flamgop.vulkanic.pipeline.VulkanicShaderStage;
 import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicRect2D;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicViewport;
@@ -252,7 +249,7 @@ public class VulkanicCommandBuffer implements AutoCloseable {
 
     @SuppressWarnings("resource")
     public void pipelineBarrier(@NotNull VulkanicDependencyInfo info) {
-        if (!device.features().synchronization2()) {
+        if (!device.features().supportsSynchronization2()) {
             throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier requires the synchronization2 device extension/feature to be enabled!");
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -272,7 +269,9 @@ public class VulkanicCommandBuffer implements AutoCloseable {
                 VulkanicBufferMemoryBarrier bufferBarrier = info.bufferMemoryBarriers().get(i);
                 pBufferMemoryBarriers.get(i)
                         .sType$Default()
+                        .srcStageMask(bufferBarrier.srcStageMask().mask())
                         .srcAccessMask(bufferBarrier.srcAccessMask().mask())
+                        .dstStageMask(bufferBarrier.dstStageMask().mask())
                         .dstAccessMask(bufferBarrier.dstAccessMask().mask())
                         .srcQueueFamilyIndex(bufferBarrier.srcQueueFamilyIndex())
                         .dstQueueFamilyIndex(bufferBarrier.dstQueueFamilyIndex())
@@ -284,7 +283,9 @@ public class VulkanicCommandBuffer implements AutoCloseable {
                 VulkanicImageMemoryBarrier imageBarrier = info.imageMemoryBarriers().get(i);
                 pImageMemoryBarriers.get(i)
                         .sType$Default()
+                        .srcStageMask(imageBarrier.srcStageMask().mask())
                         .srcAccessMask(imageBarrier.srcAccessMask().mask())
+                        .dstStageMask(imageBarrier.dstStageMask().mask())
                         .dstAccessMask(imageBarrier.dstAccessMask().mask())
                         .oldLayout(imageBarrier.oldLayout().qualifier()).newLayout(imageBarrier.newLayout().qualifier())
                         .srcQueueFamilyIndex(imageBarrier.srcQueueFamilyIndex()).dstQueueFamilyIndex(imageBarrier.dstQueueFamilyIndex())
@@ -309,7 +310,7 @@ public class VulkanicCommandBuffer implements AutoCloseable {
 
     @SuppressWarnings("resource")
     public void beginRendering(@NotNull VulkanicRenderingInfo renderingInfo) {
-        if (!device.features().dynamicRendering()) {
+        if (!device.features().supportsDynamicRendering()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#beginRendering requires the dynamicRendering device feature.");
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -378,14 +379,14 @@ public class VulkanicCommandBuffer implements AutoCloseable {
     }
 
     public void endRendering() {
-        if (!device.features().dynamicRendering()) {
+        if (!device.features().supportsDynamicRendering()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#endRendering requires the dynamicRendering device feature.");
         }
         vkCmdEndRendering(handle);
     }
 
     public void drawMeshTasksEXT(int groupCountX, int groupCountY, int groupCountZ) {
-        if (!device.features().meshShader()) {
+        if (!device.features().supportsMeshShader()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#drawMeshTasksEXT requires the meshShader device feature.");
         }
         EXTMeshShader.vkCmdDrawMeshTasksEXT(this.handle, groupCountX, groupCountY, groupCountZ);
@@ -396,14 +397,33 @@ public class VulkanicCommandBuffer implements AutoCloseable {
             @NotNull VulkanicImageLayout oldLayout,
             @NotNull VulkanicImageLayout newLayout
     ) {
+        transitionImageLayout(image, oldLayout, newLayout,
+                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
+                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
+                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
+                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE)
+        );
+    }
+
+    public void transitionImageLayout(
+            @NotNull VulkanicImage image,
+            @NotNull VulkanicImageLayout oldLayout,
+            @NotNull VulkanicImageLayout newLayout,
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> srcStage,
+            @NotNull EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> dstStage,
+            @NotNull EnumLongBitset<VulkanicAccessFlag> dstAccessMask
+    ) {
         pipelineBarrier(new VulkanicDependencyInfo(
                 EnumIntBitset.of(),
                 List.of(),
                 List.of(),
                 List.of(
                         new VulkanicImageMemoryBarrier(
-                                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
-                                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
+                                srcStage,
+                                srcAccessMask,
+                                dstStage,
+                                dstAccessMask,
                                 oldLayout, newLayout,
                                 VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
                                 image, new VulkanicImageSubresourceRange(image.aspectMask(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS)

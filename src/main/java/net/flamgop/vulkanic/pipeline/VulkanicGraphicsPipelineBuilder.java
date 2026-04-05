@@ -36,7 +36,7 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     ) {
         this.device = device;
         this.pipelineLayout = pipelineLayout;
-        if (renderPass == null && !device.features().dynamicRendering())
+        if (renderPass == null && !device.features().supportsDynamicRendering())
             throw new IllegalArgumentException("A graphics pipeline with a null render pass is only supported with the dynamic rendering feature!");
         this.renderPass = renderPass;
     }

@@ -49,13 +49,14 @@ public class VulkanicPhysicalDevice {
 
             vkGetPhysicalDeviceFeatures2(this.handle, features2);
 
-            if (features.bufferDeviceAddress() && !vk12.bufferDeviceAddress()) return false;
-            if (features.synchronization2() && !sync2.synchronization2()) return false;
-            if (features.dynamicRendering() && !dynamic.dynamicRendering()) return false;
-            if (features.meshShader() && !mesh.meshShader()) return false;
-            if (features.taskShader() && !mesh.taskShader()) return false;
-            if (features.fillModeNonSolid() && !features2.features().fillModeNonSolid()) return false;
-            if (features.shaderInt64() && !features2.features().shaderInt64()) return false;
+            if (features.supportsBufferDeviceAddress() && !vk12.bufferDeviceAddress()) return false;
+            if (features.supportsSynchronization2() && !sync2.synchronization2()) return false;
+            if (features.supportsDynamicRendering() && !dynamic.dynamicRendering()) return false;
+            if (features.supportsMeshShader() && !mesh.meshShader()) return false;
+            if (features.supportsTaskShader() && !mesh.taskShader()) return false;
+            if (features.supportsFillModeNonSolid() && !features2.features().fillModeNonSolid()) return false;
+            if (features.supportsShaderInt64() && !features2.features().shaderInt64()) return false;
+            // TODO: make this not stupid
 
             return true;
         }
