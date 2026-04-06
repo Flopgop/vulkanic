@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.core;
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.memory.VulkanicBuffer;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
@@ -754,6 +755,10 @@ public class VulkanicDevice implements AutoCloseable {
 
     public void destroyQueryPool(@NotNull VulkanicQueryPool pool) {
         VK10.vkDestroyQueryPool(this.handle, pool.handle(), null);
+    }
+
+    public @NotNull VulkanicResult getQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull ByteBuffer pData, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
+        return VulkanicResult.valueOf(VK10.vkGetQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, pData, stride, flags.mask()));
     }
 
     public @NotNull CompletableFuture<Void> submitTransient(

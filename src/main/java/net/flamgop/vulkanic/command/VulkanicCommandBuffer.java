@@ -1,8 +1,8 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
-import net.flamgop.vulkanic.core.VulkanicQueueFamily;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.VulkanicIndexType;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceRange;
@@ -221,6 +221,7 @@ public class VulkanicCommandBuffer implements AutoCloseable {
         vkCmdCopyImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
     }
 
+    @SuppressWarnings("resource")
     public void copyBufferToImage(@NotNull VulkanicBuffer srcBuffer, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<@NotNull VulkanicBufferImageCopy> regions) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkBufferImageCopy.Buffer pRegions = VkBufferImageCopy.calloc(regions.size(), stack);
@@ -247,8 +248,8 @@ public class VulkanicCommandBuffer implements AutoCloseable {
         vkCmdCopyImageToBuffer(handle, srcImage.handle(), srcLayout.qualifier(), dstBuffer.handle(), pRegions);
     }
 
-    public void fillBuffer(@NotNull VulkanicBuffer dstBuffer, long dstOffset, long size, int data) {
-        vkCmdFillBuffer(handle, dstBuffer.handle(), dstOffset, size, data);
+    public void fillBuffer(@NotNull VulkanicBuffer dstBuffer, long dstOffset, @NotNull VulkanicDeviceSize size, int data) {
+        vkCmdFillBuffer(handle, dstBuffer.handle(), dstOffset, size.bytes(), data);
     }
 
     public void pipelineBarrier(int srcStageMask, int dstStageMask, int dependencyFlags, @Nullable VkMemoryBarrier.Buffer pMemoryBarriers, @Nullable VkBufferMemoryBarrier.Buffer pBufferMemoryBarriers, @Nullable VkImageMemoryBarrier.Buffer pImageMemoryBarriers) {

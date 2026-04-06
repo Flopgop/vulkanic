@@ -93,6 +93,66 @@ public class MappedMemory implements AutoCloseable {
         MemorySegment.copy(values, 0, segment, ValueLayout.JAVA_FLOAT, offset, values.length);
     }
 
+    @Contract(pure = true)
+    public byte getByte(long offset) {
+        return segment.get(ValueLayout.JAVA_BYTE, offset);
+    }
+
+    @Contract(pure = true)
+    public boolean getBoolean(long offset) {
+        return segment.get(ValueLayout.JAVA_BYTE, offset) != 0;
+    }
+
+    @Contract(pure = true)
+    public short getShort(long offset) {
+        return segment.get(ValueLayout.JAVA_SHORT, offset);
+    }
+
+    @Contract(pure = true)
+    public char getChar(long offset) {
+        return segment.get(ValueLayout.JAVA_CHAR, offset);
+    }
+
+    @Contract(pure = true)
+    public int getInt(long offset) {
+        return segment.get(ValueLayout.JAVA_INT, offset);
+    }
+
+    @Contract(pure = true)
+    public long getLong(long offset) {
+        return segment.get(ValueLayout.JAVA_LONG, offset);
+    }
+
+    @Contract(pure = true)
+    public float getFloat(long offset) {
+        return segment.get(ValueLayout.JAVA_FLOAT, offset);
+    }
+
+    @Contract(pure = true)
+    public double getDouble(long offset) {
+        return segment.get(ValueLayout.JAVA_DOUBLE, offset);
+    }
+
+    @Contract(pure = true)
+    public void getBytes(long offset, byte @NotNull [] destination) {
+        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    public void getInts(long offset, int @NotNull [] destination) {
+        MemorySegment.copy(segment, ValueLayout.JAVA_INT, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    public void getLongs(long offset, long @NotNull [] destination) {
+        MemorySegment.copy(segment, ValueLayout.JAVA_LONG, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    public void getFloats(long offset, float @NotNull [] destination) {
+        MemorySegment.copy(segment, ValueLayout.JAVA_FLOAT, offset, destination, 0, destination.length);
+    }
+
     @Override
     public void close() {
         allocator.unmapMemory(this.allocation);

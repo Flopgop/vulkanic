@@ -12,7 +12,7 @@ dependencies {
     api(libs.jspecify)
 
     api(libs.joml)
-    implementation(platform(libs.lwjgl.bom))
+    api(platform(libs.lwjgl.bom))
 
     api(libs.lwjgl)
     api(libs.lwjgl.glfw)

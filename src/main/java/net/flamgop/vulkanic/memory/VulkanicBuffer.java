@@ -34,6 +34,10 @@ public class VulkanicBuffer implements AutoCloseable {
         else deviceAddress = -1;
     }
 
+    public void invalidate() {
+        this.allocator.invalidateAllocation(this.allocation);
+    }
+
     public long deviceAddress() {
         if (!allocator.supportsBufferDeviceAddress()) throw new UnsupportedOperationException("VulkanicBuffer#deviceAddress requires the bufferDeviceAddress feature to be enabled!");
         return deviceAddress;

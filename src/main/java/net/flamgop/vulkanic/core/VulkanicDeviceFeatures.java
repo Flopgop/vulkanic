@@ -24,6 +24,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     private boolean runtimeDescriptorArray = false;
     private boolean descriptorIndexing = false;
     private boolean shaderDrawParameters = false;
+    private boolean multiDrawIndirect = false;
 
     public boolean supportsSynchronization2() { return synchronization2; }
     public boolean supportsBufferDeviceAddress() { return bufferDeviceAddress; }
@@ -35,6 +36,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     public boolean supportsRuntimeDescriptorArray() { return runtimeDescriptorArray; }
     public boolean supportsDescriptorIndexing() { return descriptorIndexing; }
     public boolean supportsShaderDrawParameters() { return shaderDrawParameters; }
+    public boolean supportsMultiDrawIndirect() { return multiDrawIndirect; }
 
     public VulkanicDeviceFeatures() {}
 
@@ -54,6 +56,13 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    public @NotNull VulkanicDeviceFeatures multiDrawIndirect() {
+        this.multiDrawIndirect = true;
+        VkPhysicalDeviceFeatures2 features = getChainedPNext(VkPhysicalDeviceFeatures2.class);
+        features.features().multiDrawIndirect(true);
+        return this;
     }
 
     public @NotNull VulkanicDeviceFeatures synchronization2() {

@@ -151,7 +151,7 @@ public class VulkanicPhysicalDevice {
             List<VulkanicQueueFamilyProperties> properties = new ArrayList<>();
             for (int i = 0; i < pProperties.capacity(); i++) {
                 properties.add(new VulkanicQueueFamilyProperties(
-                        new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toVector3i(pProperties.get(i).minImageTransferGranularity())
+                        new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toVector3i(pProperties.get(i).minImageTransferGranularity()), i
                 ));
             }
             return properties;

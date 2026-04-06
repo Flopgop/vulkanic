@@ -5,6 +5,6 @@ import org.joml.Vector3i;
 
 public record VulkanicQueueFamilyProperties(
         EnumIntBitset<VulkanicQueueFlag> queueFlags, int queueCount,
-        int timestampValidBits, Vector3i minImageTransferGranularity
+        int timestampValidBits, Vector3i minImageTransferGranularity, int index
 ) {
 }
