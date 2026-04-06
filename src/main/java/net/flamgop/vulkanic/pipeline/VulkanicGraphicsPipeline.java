@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public final class VulkanicGraphicsPipeline implements VulkanicPipeline {
@@ -8,6 +9,9 @@ public final class VulkanicGraphicsPipeline implements VulkanicPipeline {
     private final VulkanicDevice device;
     private final long handle;
 
+    /// @see VulkanicDevice#createGraphicsPipeline
+    /// @see VulkanicDevice#createGraphicsPipelineBuilder
+    @ApiStatus.Internal
     public VulkanicGraphicsPipeline(@NotNull VulkanicDevice device, long handle) {
         this.device = device;
         this.handle = handle;

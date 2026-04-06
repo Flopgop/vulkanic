@@ -14,6 +14,8 @@ public class MappedMemory implements AutoCloseable {
     private final long allocation;
     private final MemorySegment segment;
 
+    /// @see VulkanicBuffer#map
+    /// @see net.flamgop.vulkanic.memory.image.VulkanicImage#map
     protected MappedMemory(VulkanicAllocator allocator, long allocation, long address, long size) {
         this.allocator = allocator;
         this.allocation = allocation;

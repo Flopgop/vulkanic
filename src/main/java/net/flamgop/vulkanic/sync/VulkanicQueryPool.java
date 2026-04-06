@@ -1,30 +1,28 @@
-package net.flamgop.vulkanic.pipeline;
+package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class VulkanicShaderModule implements AutoCloseable {
+public class VulkanicQueryPool implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;
 
-    /// @see VulkanicDevice#createShaderModule
+    /// @see VulkanicDevice#createQueryPool
     @ApiStatus.Internal
-    public VulkanicShaderModule(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicQueryPool(@NotNull VulkanicDevice device, long handle) {
         this.device = device;
         this.handle = handle;
     }
 
     @ApiStatus.Internal
-    @Contract(pure = true)
     public long handle() {
         return handle;
     }
 
     @Override
     public void close() {
-        device.destroyShaderModule(this);
+        this.device.destroyQueryPool(this);
     }
 }

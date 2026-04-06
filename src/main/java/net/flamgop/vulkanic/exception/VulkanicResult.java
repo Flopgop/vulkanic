@@ -76,17 +76,17 @@ public enum VulkanicResult {
 
     ;
 
-    private static final Map<Integer, VulkanicResult> VALUE_MAP = new HashMap<>();
+    private static final Map<Integer, VulkanicResult> LOOKUP = new HashMap<>();
 
     static {
         for (VulkanicResult value : VulkanicResult.values()) {
-            VALUE_MAP.put(value.qualifier(), value);
+            LOOKUP.put(value.qualifier(), value);
         }
     }
 
     public static VulkanicResult valueOf(int result) {
-        if (!VALUE_MAP.containsKey(result)) throw new RuntimeException(String.format("BAD VULKANIC RESULT INPUT!! %s", result));
-        return VALUE_MAP.get(result);
+        if (!LOOKUP.containsKey(result)) throw new RuntimeException(String.format("BAD VULKANIC RESULT INPUT!! %s", result));
+        return LOOKUP.get(result);
     }
 
     private final int qualifier;

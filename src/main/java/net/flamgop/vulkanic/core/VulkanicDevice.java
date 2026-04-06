@@ -13,10 +13,7 @@ import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.swapchain.*;
-import net.flamgop.vulkanic.sync.VulkanicFence;
-import net.flamgop.vulkanic.sync.VulkanicFenceCreateFlag;
-import net.flamgop.vulkanic.sync.VulkanicSemaphore;
-import net.flamgop.vulkanic.sync.VulkanicSemaphoreType;
+import net.flamgop.vulkanic.sync.*;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
 import org.jetbrains.annotations.ApiStatus;
@@ -50,6 +47,22 @@ public class VulkanicDevice implements AutoCloseable {
     private final Collection<String> enabledExtensions;
     private final List<String> enabledLayers;
 
+    /// This constructor will fail if any extensions or features requested are not supported by the target physical device.
+    ///
+    /// This constructor will fail if any layers requested are not present.
+    ///
+    /// There isn't a widely accepted best practice for selecting a good physical device,
+    /// but a common method is assigning each physical device a score based on important characteristics (such as available memory, required features, etc.)
+    /// then choosing the best device from the scored list.
+    ///
+    /// @param physicalDevice A [VulkanicPhysicalDevice] obtained from a [VulkanicInstance] via [VulkanicInstance#enumeratePhysicalDevices]
+    /// @param extensions A collection of Vulkan extensions to apply
+    /// @param layers A collection of Vulkan Validation Layers to apply
+    /// @param queueCreateInfos A list of queue infos, to prepopulate this device's queue families
+    /// @param features A [VulkanicDeviceFeatures] object configured for the features required of this device
+    /// @see VulkanicInstance#enumeratePhysicalDevices
+    /// @see VulkanicPhysicalDevice#supportedExtensions
+    /// @see VulkanicPhysicalDevice#supportsFeatures
     public VulkanicDevice(
             @NotNull VulkanicPhysicalDevice physicalDevice,
             @NotNull Collection<String> extensions,
@@ -340,6 +353,7 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyShaderModule(handle, module.handle(), null);
     }
 
+    @Deprecated(forRemoval = true)
     public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull VkPipelineLayoutCreateInfo createInfo) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pPipelineLayout = stack.callocLong(1);
@@ -723,13 +737,31 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroySampler(this.handle, sampler.handle(), null);
     }
 
+    public @NotNull VulkanicQueryPool createQueryPool(EnumIntBitset<VulkanicQueryPoolCreateFlag> flags, VulkanicQueryType type, int queryCount, EnumIntBitset<VulkanicQueryPipelineStatisticFlag> pipelineStatistics) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pQueryPool = stack.callocLong(1);
+            VkQueryPoolCreateInfo pQueryPoolCreateInfo = VkQueryPoolCreateInfo.calloc(stack)
+                    .sType$Default()
+                    .flags(flags.mask())
+                    .queryType(type.qualifier())
+                    .queryCount(queryCount)
+                    .pipelineStatistics(pipelineStatistics.mask());
+
+            VK10.vkCreateQueryPool(this.handle, pQueryPoolCreateInfo, null, pQueryPool);
+            return new VulkanicQueryPool(this, pQueryPool.get(0));
+        }
+    }
+
+    public void destroyQueryPool(@NotNull VulkanicQueryPool pool) {
+        VK10.vkDestroyQueryPool(this.handle, pool.handle(), null);
+    }
+
     public @NotNull CompletableFuture<Void> submitTransient(
             @NotNull VulkanicCommandPool pool,
             @NotNull VulkanicQueue queue,
             @NotNull Consumer<VulkanicCommandBuffer> usage
     ) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-
 
         VulkanicCommandBuffer commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
 
@@ -740,7 +772,11 @@ public class VulkanicDevice implements AutoCloseable {
         commandBuffer.end();
 
         VulkanicFence fence = createFence(EnumIntBitset.of());
-        queue.submit(fence, List.of(), List.of(), commandBuffer);
+        VulkanicResult result = queue.submit(fence, List.of(), List.of(), commandBuffer);
+        if (!result.success()) {
+            future.completeExceptionally(new VulkanException(result));
+            return future;
+        }
 
         try {
             Thread.ofVirtual().start(() -> {

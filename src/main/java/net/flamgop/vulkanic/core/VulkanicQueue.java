@@ -17,19 +17,21 @@ import java.util.List;
 
 public record VulkanicQueue(int family, @NotNull VkQueue handle) {
 
+    /// @see VulkanicQueueFamily#queue
+    /// @see VulkanicDevice#queue
     @ApiStatus.Internal
     public VulkanicQueue {}
 
-    public int bindSparse(@NotNull VkBindSparseInfo bindInfo, @NotNull VulkanicFence fence) {
-        return VK11.vkQueueBindSparse(this.handle, bindInfo, fence.handle());
+    public @NotNull VulkanicResult bindSparse(@NotNull VkBindSparseInfo bindInfo, @NotNull VulkanicFence fence) {
+        return VulkanicResult.valueOf(VK11.vkQueueBindSparse(this.handle, bindInfo, fence.handle()));
     }
 
-    public int bindSparse(@Nullable VkBindSparseInfo.Buffer bindInfos, @NotNull VulkanicFence fence) {
-        return VK11.vkQueueBindSparse(this.handle, bindInfos, fence.handle());
+    public @NotNull VulkanicResult bindSparse(@Nullable VkBindSparseInfo.Buffer bindInfos, @NotNull VulkanicFence fence) {
+        return VulkanicResult.valueOf(VK11.vkQueueBindSparse(this.handle, bindInfos, fence.handle()));
     }
 
     @SuppressWarnings("resource")
-    public int submit(
+    public @NotNull VulkanicResult submit(
             @NotNull VulkanicFence fence,
             @NotNull List<VulkanicSemaphoreSubmit> waitSemaphores,
             @NotNull List<VulkanicSemaphoreSubmit> signalSemaphores,
@@ -68,11 +70,11 @@ public record VulkanicQueue(int family, @NotNull VkQueue handle) {
                     .pWaitSemaphoreInfos(pWaitSemaphores)
                     .pSignalSemaphoreInfos(pSignalSemaphores);
 
-            return VK13.vkQueueSubmit2(this.handle, submitInfo, fence.handle());
+            return VulkanicResult.valueOf(VK13.vkQueueSubmit2(this.handle, submitInfo, fence.handle()));
         }
     }
 
-    public VulkanicResult present(@NotNull VulkanicSwapchain swapchain, int imageIndex, @NotNull VulkanicSemaphore semaphore) {
+    public @NotNull VulkanicResult present(@NotNull VulkanicSwapchain swapchain, int imageIndex, @NotNull VulkanicSemaphore semaphore) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             return VulkanicResult.valueOf(KHRSwapchain.vkQueuePresentKHR(this.handle, VkPresentInfoKHR.calloc(stack)
                     .sType$Default()

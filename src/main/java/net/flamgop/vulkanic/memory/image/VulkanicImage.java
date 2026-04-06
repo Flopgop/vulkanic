@@ -1,12 +1,15 @@
 package net.flamgop.vulkanic.memory.image;
 
 import net.flamgop.vulkanic.memory.MappedMemory;
+import net.flamgop.vulkanic.memory.VulkanicAllocationCreateInfo;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3i;
 import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
@@ -66,6 +69,7 @@ public class VulkanicImage implements AutoCloseable {
         return VK10.VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
+    /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
     public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, VmaAllocationInfo allocationInfo, VulkanicFormat format) {
         this.allocator = allocator;
@@ -81,6 +85,7 @@ public class VulkanicImage implements AutoCloseable {
         this.special = false;
     }
 
+    /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
     public VulkanicImage(long handle, EnumIntBitset<VulkanicImageAspectFlag> aspectMask) {
         this.allocator = null;

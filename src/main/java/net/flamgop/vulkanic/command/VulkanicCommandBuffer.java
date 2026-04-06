@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicQueueFamily;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicIndexType;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
@@ -13,6 +14,9 @@ import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
 import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicRect2D;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicViewport;
+import net.flamgop.vulkanic.sync.VulkanicQueryControlFlag;
+import net.flamgop.vulkanic.sync.VulkanicQueryPool;
+import net.flamgop.vulkanic.sync.VulkanicQueryResultFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.EnumLongBitset;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,6 +44,10 @@ public class VulkanicCommandBuffer implements AutoCloseable {
     private final VulkanicCommandPool pool;
     private final VkCommandBuffer handle;
 
+    /// @see VulkanicCommandPool#allocateCommandBuffer
+    /// @see VulkanicCommandPool#allocateCommandBuffers
+    /// @see VulkanicDevice#allocateCommandBuffer
+    /// @see VulkanicDevice#allocateCommandBuffers
     @ApiStatus.Internal
     public VulkanicCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VkCommandBuffer handle) {
         this.device = pool.device();
@@ -458,6 +466,26 @@ public class VulkanicCommandBuffer implements AutoCloseable {
                         )
                 )
         ));
+    }
+
+    public void beginQuery(@NotNull VulkanicQueryPool queryPool, int query, EnumIntBitset<VulkanicQueryControlFlag> flags) {
+        vkCmdBeginQuery(this.handle, queryPool.handle(), query, flags.mask());
+    }
+
+    public void endQuery(@NotNull VulkanicQueryPool queryPool, int query) {
+        vkCmdEndQuery(this.handle, queryPool.handle(), query);
+    }
+
+    public void resetQueryPool(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount) {
+        vkCmdResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
+    }
+
+    public void writeTimestamp(@NotNull EnumLongBitset<VulkanicPipelineStageFlag> pipelineStage, @NotNull VulkanicQueryPool queryPool, int query) {
+        vkCmdWriteTimestamp2(this.handle, pipelineStage.mask(), queryPool.handle(), query);
+    }
+
+    public void copyQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull VulkanicBuffer dstBuffer, long dstOffset, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
+        vkCmdCopyQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, dstBuffer.handle(), dstOffset, stride, flags.mask());
     }
 
     @ApiStatus.Internal

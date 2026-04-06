@@ -5,10 +5,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class VulkanicDescriptorSet implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 
+    /// @see VulkanicDescriptorPool#allocate 
     @ApiStatus.Internal
     public VulkanicDescriptorSet(@NotNull VulkanicDevice device, long handle) {
         this.device = device;

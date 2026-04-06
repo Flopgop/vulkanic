@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,7 @@ public class VulkanicFence implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 
+    /// @see VulkanicDevice#createFence
     @ApiStatus.Internal
     public VulkanicFence(VulkanicDevice device, long handle) {
         this.device = device;

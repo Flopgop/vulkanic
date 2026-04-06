@@ -14,6 +14,7 @@ public class VulkanicQueueFamily {
     private final List<VulkanicQueue> queues;
     private final int queueCount;
 
+    /// @see VulkanicDevice#queueFamily
     @ApiStatus.Internal
     public VulkanicQueueFamily(@NotNull VulkanicDevice device, int index, int queueCount) {
         this.device = device;

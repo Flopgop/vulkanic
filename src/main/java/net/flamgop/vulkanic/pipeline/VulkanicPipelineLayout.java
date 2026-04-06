@@ -10,6 +10,7 @@ public class VulkanicPipelineLayout implements AutoCloseable {
     private final long handle;
     private final long pushConstantSize;
 
+    /// @see VulkanicDevice#createPipelineLayout
     @ApiStatus.Internal
     public VulkanicPipelineLayout(VulkanicDevice device, long handle, long pushConstantSize) {
         this.device = device;

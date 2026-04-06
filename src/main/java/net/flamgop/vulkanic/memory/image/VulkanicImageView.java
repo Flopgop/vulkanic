@@ -11,6 +11,7 @@ public class VulkanicImageView implements AutoCloseable {
     private final VulkanicImage image; // TODO: maybe use this?
     private final long handle;
 
+    /// @see VulkanicDevice#createImageView
     @ApiStatus.Internal
     public VulkanicImageView(@NotNull VulkanicDevice device, @NotNull VulkanicImage image, long handle) {
         this.device = device;

@@ -9,6 +9,7 @@ public class VulkanicSemaphore implements AutoCloseable {
     private final long handle;
     private final VulkanicSemaphoreType type;
 
+    /// @see VulkanicDevice#createSemaphore
     @ApiStatus.Internal
     public VulkanicSemaphore(VulkanicDevice device, long handle, VulkanicSemaphoreType type) {
         this.device = device;

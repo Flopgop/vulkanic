@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.pipeline;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.util.ShaderUtil;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,8 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     private @Nullable VulkanicPipelineDynamicState dynamicState = null;
     private long pNext = 0;
 
+    /// @see VulkanicDevice#createGraphicsPipelineBuilder
+    @ApiStatus.Internal
     public VulkanicGraphicsPipelineBuilder(
             @NotNull VulkanicDevice device,
             @NotNull VulkanicPipelineLayout pipelineLayout,

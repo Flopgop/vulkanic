@@ -1,7 +1,9 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicQueueFamily;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +16,7 @@ public class VulkanicCommandPool implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 
+    /// @see VulkanicDevice#createCommandPool
     @ApiStatus.Internal
     public VulkanicCommandPool(@NotNull VulkanicDevice device, long handle) {
         this.device = device;
