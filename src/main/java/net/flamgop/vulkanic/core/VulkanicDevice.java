@@ -3,7 +3,6 @@ package net.flamgop.vulkanic.core;
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
-import net.flamgop.vulkanic.memory.VulkanicBuffer;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
@@ -47,6 +46,24 @@ public class VulkanicDevice implements AutoCloseable {
 
     private final Collection<String> enabledExtensions;
     private final List<String> enabledLayers;
+
+    @ApiStatus.Internal
+    public VulkanicDevice(@NotNull VkDevice handle,
+                          @NotNull VulkanicPhysicalDevice physicalDevice,
+                          @NotNull VulkanicDeviceFeatures features,
+                          @NotNull List<VulkanicQueueInfo> queueInfos,
+                          @NotNull Collection<String> extensions,
+                          @NotNull Collection<String> layers) {
+        this.handle = handle;
+        this.physicalDevice = physicalDevice;
+        this.features = features;
+        this.queueFamilies = new ArrayList<>(queueInfos.size());
+        for (VulkanicQueueInfo createInfo : queueInfos) {
+            queueFamilies.add(new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
+        }
+        this.enabledExtensions = List.copyOf(extensions);
+        this.enabledLayers = List.copyOf(layers);
+    }
 
     /// This constructor will fail if any extensions or features requested are not supported by the target physical device.
     ///

@@ -26,6 +26,14 @@ public class VulkanicInstance implements AutoCloseable {
     private final @Unmodifiable @NotNull List<String> enabledExtensions;
     private final VkInstance handle;
 
+    @ApiStatus.Internal
+    public VulkanicInstance(@NotNull VkInstance handle, @NotNull VulkanicApplicationInfo applicationInfo, @NotNull List<String> enabledLayers, @NotNull List<String> enabledExtensions) {
+        this.handle = handle;
+        this.applicationInfo = applicationInfo;
+        this.enabledLayers = List.copyOf(enabledLayers);
+        this.enabledExtensions = List.copyOf(enabledExtensions);
+    }
+
     /// @param applicationInfo A [VulkanicApplicationInfo] object describing the name, version, and required Vulkan version for this app and engine
     /// @param layers A collection of Vulkan Validation Layers to apply to this instance. Will fail if any are not present.
     /// @param extensions A collection of Vulkan extensions to apply to this instance. Will fail if any are not supported.
