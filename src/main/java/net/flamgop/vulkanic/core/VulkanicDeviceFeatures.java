@@ -25,6 +25,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     private boolean descriptorIndexing = false;
     private boolean shaderDrawParameters = false;
     private boolean multiDrawIndirect = false;
+    private boolean hostQueryReset = false;
 
     public boolean supportsSynchronization2() { return synchronization2; }
     public boolean supportsBufferDeviceAddress() { return bufferDeviceAddress; }
@@ -37,6 +38,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     public boolean supportsDescriptorIndexing() { return descriptorIndexing; }
     public boolean supportsShaderDrawParameters() { return shaderDrawParameters; }
     public boolean supportsMultiDrawIndirect() { return multiDrawIndirect; }
+    public boolean supportsHostQueryReset() { return hostQueryReset; }
 
     public VulkanicDeviceFeatures() {}
 
@@ -141,6 +143,14 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
         this.extensions.add(KHRShaderDrawParameters.VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
         VkPhysicalDeviceShaderDrawParametersFeatures drawParametersFeatures = getChainedPNext(VkPhysicalDeviceShaderDrawParametersFeatures.class);
         drawParametersFeatures.shaderDrawParameters(true);
+        return this;
+    }
+
+    public @NotNull VulkanicDeviceFeatures hostQueryReset() {
+        this.hostQueryReset = true;
+        this.extensions.add(EXTHostQueryReset.VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+        VkPhysicalDeviceHostQueryResetFeatures hostQueryResetFeatures = getChainedPNext(VkPhysicalDeviceHostQueryResetFeatures.class);
+        hostQueryResetFeatures.hostQueryReset(true);
         return this;
     }
 

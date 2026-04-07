@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 public class VulkanicDevice implements AutoCloseable {
 
+    private final VulkanicInstance instance;
     private final VkDevice handle;
     private final VulkanicPhysicalDevice physicalDevice;
     private final VulkanicDeviceFeatures features;
@@ -49,12 +50,16 @@ public class VulkanicDevice implements AutoCloseable {
     private final List<String> enabledLayers;
 
     @ApiStatus.Internal
-    public VulkanicDevice(@NotNull VkDevice handle,
-                          @NotNull VulkanicPhysicalDevice physicalDevice,
-                          @NotNull VulkanicDeviceFeatures features,
-                          @NotNull List<VulkanicQueueInfo> queueInfos,
-                          @NotNull Collection<String> extensions,
-                          @NotNull Collection<String> layers) {
+    public VulkanicDevice(
+            @NotNull VulkanicInstance instance,
+            @NotNull VkDevice handle,
+            @NotNull VulkanicPhysicalDevice physicalDevice,
+            @NotNull VulkanicDeviceFeatures features,
+            @NotNull List<VulkanicQueueInfo> queueInfos,
+            @NotNull Collection<String> extensions,
+            @NotNull Collection<String> layers
+    ) {
+        this.instance = instance;
         this.handle = handle;
         this.physicalDevice = physicalDevice;
         this.features = features;
@@ -83,12 +88,14 @@ public class VulkanicDevice implements AutoCloseable {
     /// @see VulkanicPhysicalDevice#supportedExtensions
     /// @see VulkanicPhysicalDevice#supportsFeatures
     public VulkanicDevice(
+            @NotNull VulkanicInstance instance,
             @NotNull VulkanicPhysicalDevice physicalDevice,
             @NotNull Collection<String> extensions,
             @NotNull Collection<String> layers,
             @NotNull List<VulkanicQueueInfo> queueCreateInfos,
             @NotNull VulkanicDeviceFeatures features
     ) {
+        this.instance = instance;
         this.features = features;
         this.physicalDevice = physicalDevice;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -780,6 +787,16 @@ public class VulkanicDevice implements AutoCloseable {
 
     public @NotNull VulkanicResult getQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull ByteBuffer pData, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
         return VulkanicResult.valueOf(VK10.vkGetQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, pData, stride, flags.mask()));
+    }
+
+    public void resetQueryPool(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount) {
+        if (instance.applicationInfo().apiVersion().version() > ApiVersion.VULKAN_1_2.version()) {
+            VK12.vkResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
+        } else if (features.supportsHostQueryReset()) {
+            EXTHostQueryReset.vkResetQueryPoolEXT(this.handle, queryPool.handle(), firstQuery, queryCount);
+        } else {
+            throw new UnsupportedOperationException("VulkanicDevice#resetQueryPool requires either Vulkan 1.2 or EXTHostQueryReset (see VulkanicDeviceFeatures)");
+        }
     }
 
     public @NotNull CompletableFuture<Void> submitTransient(
