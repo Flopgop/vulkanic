@@ -777,7 +777,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .pipelineStatistics(pipelineStatistics.mask());
 
             VK10.vkCreateQueryPool(this.handle, pQueryPoolCreateInfo, null, pQueryPool);
-            return new VulkanicQueryPool(this, pQueryPool.get(0));
+            return new VulkanicQueryPool(this, pQueryPool.get(0), queryCount);
         }
     }
 

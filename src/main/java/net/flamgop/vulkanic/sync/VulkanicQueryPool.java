@@ -9,15 +9,22 @@ public class VulkanicQueryPool implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 
+    private final int queryCount;
+
     /// @see VulkanicDevice#createQueryPool
     @ApiStatus.Internal
-    public VulkanicQueryPool(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicQueryPool(@NotNull VulkanicDevice device, long handle, int queryCount) {
         this.device = device;
         this.handle = handle;
+        this.queryCount = queryCount;
+    }
+
+    public int queryCount() {
+        return queryCount;
     }
 
     public void reset() {
-        device.resetQueryPool(this, 0, -1);
+        device.resetQueryPool(this, 0, queryCount);
     }
 
     @ApiStatus.Internal
