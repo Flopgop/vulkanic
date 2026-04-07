@@ -794,7 +794,7 @@ public class VulkanicDevice implements AutoCloseable {
             throw new UnsupportedOperationException("VulkanicDevice#resetQueryPool requires either Vulkan 1.2 or EXTHostQueryReset and the hostQueryReset feature set.");
         }
 
-        if (instance.applicationInfo().apiVersion().version() > ApiVersion.VULKAN_1_2.version()) {
+        if (instance.applicationInfo().apiVersion().version() >= ApiVersion.VULKAN_1_2.version()) {
             VK12.vkResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
         } else {
             EXTHostQueryReset.vkResetQueryPoolEXT(this.handle, queryPool.handle(), firstQuery, queryCount);
