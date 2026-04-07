@@ -130,21 +130,9 @@ public class VulkanicAllocator implements AutoCloseable {
     }
 
     public @NotNull VulkanicImage createImage(
-            EnumIntBitset<VulkanicImageCreateFlag> flags,
-            VulkanicImageType imageType,
-            VulkanicFormat format,
-            Vector3i extent,
-            int mipLevels,
-            int arrayLayers,
-            VulkanicSampleCountFlag samples,
-            VulkanicImageTiling tiling,
-            EnumIntBitset<VulkanicImageUsageFlag> usage,
-            VulkanicSharingMode sharingMode,
-            VulkanicImageLayout initialLayout,
-            int[] queueFamilyIndices,
-
+            @NotNull VulkanicImageCreateInfo imageCreateInfo,
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
-        if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
+        if (imageCreateInfo.extent().x <= 0 || imageCreateInfo.extent().y <= 0 || imageCreateInfo.extent().z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
         try (MemoryStack stack = MemoryStack.stackPush()) {
 
             VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)
@@ -154,28 +142,28 @@ public class VulkanicAllocator implements AutoCloseable {
                     .preferredFlags(allocationCreateInfo.preferredFlags().mask())
                     .memoryTypeBits(allocationCreateInfo.memoryTypeBits());
 
-            VkImageCreateInfo imageCreateInfo = VkImageCreateInfo.calloc(stack)
+            VkImageCreateInfo pImageCreateInfo = VkImageCreateInfo.calloc(stack)
                     .sType$Default()
-                    .flags(flags.mask())
-                    .imageType(imageType.qualifier())
-                    .format(format.qualifier())
-                    .extent(e -> e.set(extent.x(), extent.y(), extent.z()))
-                    .mipLevels(mipLevels)
-                    .arrayLayers(arrayLayers)
-                    .samples(samples.flag())
-                    .tiling(tiling.qualifier())
-                    .usage(usage.mask())
-                    .sharingMode(sharingMode.qualifier())
-                    .initialLayout(initialLayout.qualifier())
-                    .queueFamilyIndexCount(queueFamilyIndices.length)
-                    .pQueueFamilyIndices(stack.ints(queueFamilyIndices));
+                    .flags(imageCreateInfo.flags().mask())
+                    .imageType(imageCreateInfo.imageType().qualifier())
+                    .format(imageCreateInfo.format().qualifier())
+                    .extent(e -> e.set(imageCreateInfo.extent().x(), imageCreateInfo.extent().y(), imageCreateInfo.extent().z()))
+                    .mipLevels(imageCreateInfo.mipLevels())
+                    .arrayLayers(imageCreateInfo.arrayLayers())
+                    .samples(imageCreateInfo.samples().flag())
+                    .tiling(imageCreateInfo.tiling().qualifier())
+                    .usage(imageCreateInfo.usage().mask())
+                    .sharingMode(imageCreateInfo.sharingMode().qualifier())
+                    .initialLayout(imageCreateInfo.initialLayout().qualifier())
+                    .queueFamilyIndexCount(imageCreateInfo.queueFamilyIndices().length)
+                    .pQueueFamilyIndices(stack.ints(imageCreateInfo.queueFamilyIndices()));
 
             LongBuffer pImage = stack.callocLong(1);
             PointerBuffer pAllocation = stack.callocPointer(1);
             VmaAllocationInfo pAllocationInfo = VmaAllocationInfo.calloc(stack);
 
-            VkUtil.check(Vma.vmaCreateImage(this.handle, imageCreateInfo, pAllocationCreateInfo, pImage, pAllocation, pAllocationInfo));
-            return new VulkanicImage(this, pImage.get(0), pAllocation.get(0), pAllocationInfo, format);
+            VkUtil.check(Vma.vmaCreateImage(this.handle, pImageCreateInfo, pAllocationCreateInfo, pImage, pAllocation, pAllocationInfo));
+            return new VulkanicImage(this, pImage.get(0), pAllocation.get(0), pAllocationInfo, imageCreateInfo);
         }
     }
 

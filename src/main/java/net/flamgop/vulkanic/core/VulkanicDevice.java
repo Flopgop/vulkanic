@@ -20,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3i;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -711,7 +712,10 @@ public class VulkanicDevice implements AutoCloseable {
                     .oldSwapchain(oldSwapchain != null ? oldSwapchain.handle() : 0);
             VulkanicResult result = VulkanicResult.valueOf(KHRSwapchain.vkCreateSwapchainKHR(this.handle, swapchainCreateInfoKHR, null, pSwapchain));
             if (!result.success()) throw new VulkanException(result);
-            return new VulkanicSwapchain(this, pSwapchain.get(0));
+            return new VulkanicSwapchain(
+                    this, pSwapchain.get(0),
+                    imageFormat, new Vector3i(width, height, 1), imageUsage
+            );
         }
     }
 

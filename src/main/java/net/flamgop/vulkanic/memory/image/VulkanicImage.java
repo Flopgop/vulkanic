@@ -1,32 +1,18 @@
 package net.flamgop.vulkanic.memory.image;
 
 import net.flamgop.vulkanic.memory.MappedMemory;
-import net.flamgop.vulkanic.memory.VulkanicAllocationCreateInfo;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
-import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3i;
+import org.joml.Vector3ic;
 import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
 
 public class VulkanicImage implements AutoCloseable {
-
-    private final VulkanicAllocator allocator;
-    private final long handle;
-    private final long allocation;
-
-    private final EnumIntBitset<VulkanicImageAspectFlag> aspectMask;
-    private final int memoryType;
-    private final long deviceMemory;
-    private final long offset;
-    private final long size;
-
-    private final boolean special;
 
     private static boolean isDepthFormat(VulkanicFormat format) {
         return switch (format) {
@@ -69,39 +55,81 @@ public class VulkanicImage implements AutoCloseable {
         return VK10.VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
+    private final VulkanicAllocator allocator;
+    private final long handle;
+    private final long allocation;
+
+    private final EnumIntBitset<VulkanicImageAspectFlag> aspectMask;
+    private final int memoryType;
+    private final long deviceMemory;
+    private final long offset;
+    private final long size;
+
+    private final boolean special;
+
+    private final VulkanicFormat format;
+    private final Vector3ic extent;
+    private final int mipLevels;
+    private final EnumIntBitset<VulkanicImageUsageFlag> usage;
+
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, VmaAllocationInfo allocationInfo, VulkanicFormat format) {
+    public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, VmaAllocationInfo allocationInfo, VulkanicImageCreateInfo createInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
 
-        this.aspectMask = new EnumIntBitset<>(computeAspectMask(format));
+        this.aspectMask = new EnumIntBitset<>(computeAspectMask(createInfo.format()));
         this.memoryType = allocationInfo.memoryType();
         this.deviceMemory = allocationInfo.deviceMemory();
         this.offset = allocationInfo.offset();
         this.size = allocationInfo.size();
+        this.format = createInfo.format();
+        this.extent = createInfo.extent();
+        this.mipLevels = createInfo.mipLevels();
+        this.usage = createInfo.usage();
 
         this.special = false;
     }
 
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(long handle, EnumIntBitset<VulkanicImageAspectFlag> aspectMask) {
+    public VulkanicImage(long handle, @NotNull VulkanicFormat format, @NotNull Vector3ic extent, int mipLevels, @NotNull EnumIntBitset<VulkanicImageUsageFlag> usage) {
         this.allocator = null;
         this.handle = handle;
-        this.aspectMask = aspectMask;
+        this.aspectMask = new EnumIntBitset<>(computeAspectMask(format));
         this.allocation = 0;
         this.memoryType = 0;
         this.deviceMemory = 0;
         this.offset = 0;
         this.size = 0;
         this.special = true;
+
+        this.format = format;
+        this.extent = extent;
+        this.mipLevels = mipLevels;
+        this.usage = usage;
     }
 
     public @NotNull MappedMemory map() {
         if (special) throw new UnsupportedOperationException("Cannot map special images (no associated memory)");
         return this.allocator.mapMemory(this.allocation);
+    }
+
+    public @NotNull VulkanicFormat format() {
+        return format;
+    }
+
+    public @NotNull Vector3ic extent() {
+        return extent;
+    }
+
+    public int mipLevels() {
+        return mipLevels;
+    }
+
+    public EnumIntBitset<VulkanicImageUsageFlag> usage() {
+        return usage;
     }
 
     public EnumIntBitset<VulkanicImageAspectFlag> aspectMask() {

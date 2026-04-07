@@ -3,12 +3,14 @@ package net.flamgop.vulkanic.swapchain;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.memory.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.VulkanicImage;
-import net.flamgop.vulkanic.memory.image.VulkanicImageAspectFlag;
+import net.flamgop.vulkanic.memory.image.VulkanicImageUsageFlag;
 import net.flamgop.vulkanic.sync.VulkanicFence;
 import net.flamgop.vulkanic.sync.VulkanicSemaphore;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.*;
+import org.joml.Vector3ic;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRSwapchain;
 import org.lwjgl.vulkan.VK10;
@@ -27,7 +29,10 @@ public class VulkanicSwapchain implements AutoCloseable {
 
     private final List<VulkanicImage> images;
 
-    public VulkanicSwapchain(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicSwapchain(
+            @NotNull VulkanicDevice device, long handle,
+            @NotNull VulkanicFormat imageFormat, @NotNull Vector3ic imageExtent, @NotNull EnumIntBitset<VulkanicImageUsageFlag> imageUsage
+    ) {
         this.device = device;
         this.handle = handle;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -37,7 +42,7 @@ public class VulkanicSwapchain implements AutoCloseable {
             KHRSwapchain.vkGetSwapchainImagesKHR(this.device.handle(), this.handle, pCount, pSwapchainImages);
             List<VulkanicImage> images = new ArrayList<>();
             for (int i = 0; i < pCount.get(0); i++) {
-                images.add(new VulkanicImage(pSwapchainImages.get(i), EnumIntBitset.of(VulkanicImageAspectFlag.COLOR)));
+                images.add(new VulkanicImage(pSwapchainImages.get(i), imageFormat, imageExtent, 1, imageUsage));
             }
             this.images = List.copyOf(images);
         }
