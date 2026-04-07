@@ -790,12 +790,14 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     public void resetQueryPool(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount) {
+        if (!features.supportsHostQueryReset()) {
+            throw new UnsupportedOperationException("VulkanicDevice#resetQueryPool requires either Vulkan 1.2 or EXTHostQueryReset and the hostQueryReset feature set.");
+        }
+
         if (instance.applicationInfo().apiVersion().version() > ApiVersion.VULKAN_1_2.version()) {
             VK12.vkResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
-        } else if (features.supportsHostQueryReset()) {
-            EXTHostQueryReset.vkResetQueryPoolEXT(this.handle, queryPool.handle(), firstQuery, queryCount);
         } else {
-            throw new UnsupportedOperationException("VulkanicDevice#resetQueryPool requires either Vulkan 1.2 or EXTHostQueryReset (see VulkanicDeviceFeatures)");
+            EXTHostQueryReset.vkResetQueryPoolEXT(this.handle, queryPool.handle(), firstQuery, queryCount);
         }
     }
 
