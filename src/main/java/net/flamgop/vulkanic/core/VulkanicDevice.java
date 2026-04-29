@@ -10,6 +10,7 @@ import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.pipeline.VulkanicComputePipeline;
 import net.flamgop.vulkanic.pipeline.VulkanicGraphicsPipeline;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
+import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.swapchain.*;
@@ -615,7 +616,7 @@ public class VulkanicDevice implements AutoCloseable {
 
     @SuppressWarnings("resource")
     public @NotNull VulkanicGraphicsPipeline createGraphicsPipeline(
-            @NotNull VulkanicPipelineLayout layout,
+            @Nullable VulkanicPipelineLayout layout,
             @Nullable VulkanicRenderPass renderPass,
             int subpass,
             @NotNull List<VulkanicPipelineShaderStage> stages,
@@ -627,8 +628,12 @@ public class VulkanicDevice implements AutoCloseable {
             @Nullable VulkanicDepthStencilState depthStencilState,
             @Nullable VulkanicColorBlendState colorBlendState,
             @Nullable VulkanicPipelineDynamicState dynamicState,
-            long pNext
+            @Nullable VulkanicDescriptorSetAndBindingMapping descriptorSetAndBindingMapping,
+            long next
     ) {
+        if (layout == null && (!features.supportsDescriptorHeap() || descriptorSetAndBindingMapping == null)) {
+            throw new UnsupportedOperationException("if layout is null, the descriptor heap feature must be enabled and a descriptor set and binding mapping must be provided.");
+        }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(stages.size(), stack);
             for (int i = 0; i < stages.size(); i++) {
@@ -640,6 +645,101 @@ public class VulkanicDevice implements AutoCloseable {
                         .pName(stack.UTF8(stageInfo.entrypoint()))
                         .pSpecializationInfo(stageInfo.specializationInfo());
             }
+
+            long pNext;
+            if (descriptorSetAndBindingMapping != null) {
+                VkDescriptorMappingSourceDataEXT pSourceData = VkDescriptorMappingSourceDataEXT.calloc(stack);
+
+                switch (descriptorSetAndBindingMapping.sourceData()) {
+                    case VulkanicDescriptorMappingSourceData.ConstantOffset constantOffset -> pSourceData.constantOffset(o ->
+                            o
+                                    .heapOffset(constantOffset.heapOffset())
+                                    .heapArrayStride(constantOffset.heapArrayStride())
+                                    .pEmbeddedSampler(constantOffset.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
+                                    .samplerHeapOffset(constantOffset.samplerHeapOffset())
+                                    .samplerHeapArrayStride(constantOffset.samplerHeapArrayStride())
+                    );
+                    case VulkanicDescriptorMappingSourceData.PushIndex pushIndex -> pSourceData.pushIndex(i ->
+                            i
+                                    .heapOffset(pushIndex.heapOffset())
+                                    .pushOffset(pushIndex.pushOffset())
+                                    .heapIndexStride(pushIndex.heapIndexStride())
+                                    .heapArrayStride(pushIndex.heapArrayStride())
+                                    .pEmbeddedSampler(pushIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
+                                    .useCombinedImageSamplerIndex(pushIndex.useCombinedImageSamplerIndex())
+                                    .samplerHeapOffset(pushIndex.samplerHeapOffset())
+                                    .samplerPushOffset(pushIndex.samplerPushOffset())
+                                    .samplerHeapIndexStride(pushIndex.samplerHeapIndexStride())
+                                    .samplerHeapArrayStride(pushIndex.samplerHeapArrayStride())
+                    );
+                    case VulkanicDescriptorMappingSourceData.IndirectIndex indirectIndex -> pSourceData.indirectIndex(i ->
+                            i
+                                    .heapOffset(indirectIndex.heapOffset())
+                                    .pushOffset(indirectIndex.pushOffset())
+                                    .addressOffset(indirectIndex.addressOffset())
+                                    .heapIndexStride(indirectIndex.heapIndexStride())
+                                    .heapArrayStride(indirectIndex.heapArrayStride())
+                                    .pEmbeddedSampler(indirectIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
+                                    .useCombinedImageSamplerIndex(indirectIndex.useCombinedImageSamplerIndex())
+                                    .samplerHeapOffset(indirectIndex.samplerHeapOffset())
+                                    .samplerPushOffset(indirectIndex.samplerPushOffset())
+                                    .samplerAddressOffset(indirectIndex.samplerAddressOffset())
+                                    .samplerHeapIndexStride(indirectIndex.samplerHeapIndexStride())
+                                    .samplerHeapArrayStride(indirectIndex.samplerHeapArrayStride())
+                    );
+                    case VulkanicDescriptorMappingSourceData.IndirectIndexArray indirectIndexArray -> pSourceData.indirectIndexArray(i ->
+                            i
+                                    .heapOffset(indirectIndexArray.heapOffset())
+                                    .pushOffset(indirectIndexArray.pushOffset())
+                                    .addressOffset(indirectIndexArray.addressOffset())
+                                    .heapIndexStride(indirectIndexArray.heapIndexStride())
+                                    .pEmbeddedSampler(indirectIndexArray.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
+                                    .useCombinedImageSamplerIndex(indirectIndexArray.useCombinedImageSamplerIndex())
+                                    .samplerHeapOffset(indirectIndexArray.samplerHeapOffset())
+                                    .samplerPushOffset(indirectIndexArray.samplerPushOffset())
+                                    .samplerAddressOffset(indirectIndexArray.samplerAddressOffset())
+                                    .samplerHeapIndexStride(indirectIndexArray.samplerHeapIndexStride())
+                    );
+                    case VulkanicDescriptorMappingSourceData.HeapData heapData -> pSourceData.heapData(h ->
+                            h
+                                    .heapOffset(heapData.heapOffset())
+                                    .pushOffset(heapData.pushOffset())
+                    );
+                    case VulkanicDescriptorMappingSourceData.PushDataOffset pushDataOffset -> pSourceData.pushDataOffset(pushDataOffset.value());
+                    case VulkanicDescriptorMappingSourceData.PushAddressOffset pushAddressOffset -> pSourceData.pushAddressOffset(pushAddressOffset.value());
+                    case VulkanicDescriptorMappingSourceData.IndirectAddress indirectAddress -> pSourceData.indirectAddress(i ->
+                            i
+                                    .pushOffset(indirectAddress.pushOffset())
+                                    .addressOffset(indirectAddress.addressOffset())
+                    );
+                    case VulkanicDescriptorMappingSourceData.ShaderRecordIndex shaderRecordIndex -> pSourceData.shaderRecordIndex(s ->
+                            s
+                                    .heapOffset(shaderRecordIndex.heapOffset())
+                                    .shaderRecordOffset(shaderRecordIndex.shaderRecordOffset())
+                                    .heapIndexStride(shaderRecordIndex.heapIndexStride())
+                                    .heapArrayStride(shaderRecordIndex.heapArrayStride())
+                                    .pEmbeddedSampler(shaderRecordIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
+                                    .useCombinedImageSamplerIndex(shaderRecordIndex.useCombinedImageSamplerIndex())
+                                    .samplerHeapOffset(shaderRecordIndex.samplerHeapOffset())
+                                    .samplerShaderRecordOffset(shaderRecordIndex.samplerShaderRecordOffset())
+                                    .samplerHeapIndexStride(shaderRecordIndex.samplerHeapIndexStride())
+                                    .samplerHeapArrayStride(shaderRecordIndex.samplerHeapArrayStride())
+                    );
+                    case VulkanicDescriptorMappingSourceData.ShaderRecordDataOffset shaderRecordDataOffset -> pSourceData.shaderRecordDataOffset(shaderRecordDataOffset.value());
+                    case VulkanicDescriptorMappingSourceData.ShaderRecordAddressOffset shaderRecordAddressOffset -> pSourceData.shaderRecordAddressOffset(shaderRecordAddressOffset.value());
+                }
+
+                pNext = VkDescriptorSetAndBindingMappingEXT.calloc(stack)
+                        .sType$Default()
+                        .descriptorSet(descriptorSetAndBindingMapping.descriptorSet())
+                        .firstBinding(descriptorSetAndBindingMapping.firstBinding())
+                        .bindingCount(descriptorSetAndBindingMapping.bindingCount())
+                        .resourceMask(descriptorSetAndBindingMapping.resourceMask().mask())
+                        .source(descriptorSetAndBindingMapping.source().qualifier())
+                        .sourceData(pSourceData)
+                        .address();
+            } else pNext = next;
+
             LongBuffer pPipeline = stack.callocLong(1);
             VkGraphicsPipelineCreateInfo.Buffer createInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack)
                     .sType$Default()
@@ -652,7 +752,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .pDepthStencilState(depthStencilState != null ? depthStencilState.build(stack) : null)
                     .pColorBlendState(colorBlendState != null ? colorBlendState.build(stack) : null)
                     .pDynamicState(dynamicState != null ? dynamicState.build(stack) : null)
-                    .layout(layout.handle())
+                    .layout(layout != null ? layout.handle() : 0)
                     .renderPass(renderPass != null ? renderPass.handle() : VK10.VK_NULL_HANDLE)
                     .subpass(subpass)
                     .basePipelineHandle(VK10.VK_NULL_HANDLE)
@@ -730,31 +830,20 @@ public class VulkanicDevice implements AutoCloseable {
         KHRSwapchain.vkDestroySwapchainKHR(this.handle, swapchain.handle(), null);
     }
 
-    public @NotNull VulkanicSampler createSampler(
-            @NotNull EnumIntBitset<VulkanicSamplerCreateFlag> flags,
-            @NotNull VulkanicFilter magFilter, @NotNull VulkanicFilter minFilter,
-            @NotNull VulkanicSamplerMipmapMode mipmapMode,
-            @NotNull VulkanicSamplerAddressMode addressModeU, @NotNull VulkanicSamplerAddressMode addressModeV, @NotNull VulkanicSamplerAddressMode addressModeW,
-            float mipLodBias,
-            boolean anisotropyEnable, float maxAnisotropy,
-            boolean compareEnable, @Nullable VulkanicCompareOp compareOp,
-            float minLod, float maxLod,
-            @Nullable VulkanicBorderColor borderColor,
-            boolean unnormalizedCoordinates
-    ) {
+    public @NotNull VulkanicSampler createSampler(VulkanicSamplerCreateInfo createInfo) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSamplerCreateInfo samplerCreateInfo = VkSamplerCreateInfo.calloc(stack)
                     .sType$Default()
-                    .flags(flags.mask())
-                    .magFilter(magFilter.qualifier()).minFilter(minFilter.qualifier())
-                    .mipmapMode(mipmapMode.qualifier())
-                    .addressModeU(addressModeU.qualifier()).addressModeV(addressModeV.qualifier()).addressModeW(addressModeW.qualifier())
-                    .mipLodBias(mipLodBias)
-                    .anisotropyEnable(anisotropyEnable).maxAnisotropy(maxAnisotropy)
-                    .compareEnable(compareEnable).compareOp(compareOp != null ? compareOp.qualifier() : 0)
-                    .minLod(minLod).maxLod(maxLod)
-                    .borderColor(borderColor != null ? borderColor.qualifier() : 0)
-                    .unnormalizedCoordinates(unnormalizedCoordinates);
+                    .flags(createInfo.flags().mask())
+                    .magFilter(createInfo.magFilter().qualifier()).minFilter(createInfo.minFilter().qualifier())
+                    .mipmapMode(createInfo.mipmapMode().qualifier())
+                    .addressModeU(createInfo.addressModeU().qualifier()).addressModeV(createInfo.addressModeV().qualifier()).addressModeW(createInfo.addressModeW().qualifier())
+                    .mipLodBias(createInfo.mipLodBias())
+                    .anisotropyEnable(createInfo.anisotropyEnable()).maxAnisotropy(createInfo.maxAnisotropy())
+                    .compareEnable(createInfo.compareEnable()).compareOp(createInfo.compareOp() != null ? createInfo.compareOp().qualifier() : 0)
+                    .minLod(createInfo.minLod()).maxLod(createInfo.maxLod())
+                    .borderColor(createInfo.borderColor() != null ? createInfo.borderColor().qualifier() : 0)
+                    .unnormalizedCoordinates(createInfo.unnormalizedCoordinates());
 
             LongBuffer pSampler = stack.callocLong(1);
             VK10.vkCreateSampler(this.handle, samplerCreateInfo, null, pSampler);
@@ -798,6 +887,78 @@ public class VulkanicDevice implements AutoCloseable {
             VK12.vkResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
         } else {
             EXTHostQueryReset.vkResetQueryPoolEXT(this.handle, queryPool.handle(), firstQuery, queryCount);
+        }
+    }
+
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicResult writeResourceDescriptors(List<VulkanicResourceDescriptorInfo> resources, List<ByteBuffer> descriptors) {
+        if (!features.supportsDescriptorHeap()) {
+            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the EXTDescriptorHeap feature.");
+        }
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkResourceDescriptorInfoEXT.Buffer pResources = VkResourceDescriptorInfoEXT.calloc(resources.size(), stack);
+            for (int i = 0; i < resources.size(); i++) {
+                VulkanicResourceDescriptorInfo info = resources.get(i);
+                VkResourceDescriptorDataEXT pData = VkResourceDescriptorDataEXT.calloc(stack);
+                switch (info.data()) {
+                    case VulkanicResourceDescriptorData.Image image -> pData.pImage(VkImageDescriptorInfoEXT.calloc(stack)
+                            .sType$Default()
+                            .pView(VkImageViewCreateInfo.calloc()
+                                    .sType$Default()
+                                    .viewType(image.view().viewType().qualifier())
+                                    .format(image.view().format().qualifier())
+                                    .components(mapping -> mapping.set(image.view().componentMapping().r().qualifier(), image.view().componentMapping().g().qualifier(), image.view().componentMapping().b().qualifier(), image.view().componentMapping().a().qualifier()))
+                                    .subresourceRange(subresource -> subresource.set(image.view().subresourceRange().aspectMask().mask(), image.view().subresourceRange().baseMipLevel(), image.view().subresourceRange().levelCount(), image.view().subresourceRange().baseArrayLayer(), image.view().subresourceRange().layerCount()))
+                            )
+                            .layout(image.layout().qualifier())
+                    );
+                    case VulkanicResourceDescriptorData.TexelBuffer texelBuffer -> pData.pTexelBuffer(VkTexelBufferDescriptorInfoEXT.calloc(stack)
+                            .sType$Default()
+                            .format(texelBuffer.format().qualifier())
+                            .addressRange(range -> range.address$(texelBuffer.addressRange().address()).size(texelBuffer.addressRange().size().bytes()))
+                    );
+                    case VulkanicDeviceAddressRange deviceAddressRange -> pData.pAddressRange(VkDeviceAddressRangeEXT.calloc(stack)
+                            .address$(deviceAddressRange.address())
+                            .size(deviceAddressRange.size().bytes())
+                    );
+                    case VulkanicResourceDescriptorData.TensorViewCreateInfo _ -> pData.pTensorARM(VkTensorViewCreateInfoARM.calloc(stack).sType$Default()); // TODO
+                }
+
+                pResources.get(i)
+                        .sType$Default()
+                        .type(info.type().qualifier())
+                        .data(pData);
+            }
+            VkHostAddressRangeEXT.Buffer pDescriptors = VkHostAddressRangeEXT.calloc(descriptors.size(), stack);
+            for (int i = 0; i < descriptors.size(); i++) {
+                ByteBuffer buffer = descriptors.get(i);
+                pDescriptors.get(i).address$(buffer);
+            }
+
+            return VulkanicResult.valueOf(EXTDescriptorHeap.vkWriteResourceDescriptorsEXT(this.handle, pResources, pDescriptors));
+        }
+    }
+
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicResult writeSamplerDescriptors(List<VulkanicSamplerCreateInfo> samplers, List<ByteBuffer> descriptors) {
+        if (!features.supportsDescriptorHeap()) {
+            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the EXTDescriptorHeap feature.");
+        }
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkSamplerCreateInfo.Buffer pSamplers = VkSamplerCreateInfo.calloc(samplers.size(), stack);
+            for (int i = 0; i < samplers.size(); i++) {
+                VulkanicSamplerCreateInfo samplerInfo = samplers.get(i);
+                samplerInfo.populate(pSamplers.get(i));
+            }
+            VkHostAddressRangeEXT.Buffer pDescriptors = VkHostAddressRangeEXT.calloc(descriptors.size(), stack);
+            for (int i = 0; i < descriptors.size(); i++) {
+                ByteBuffer buffer = descriptors.get(i);
+                pDescriptors.get(i).address$(buffer);
+            }
+
+            return VulkanicResult.valueOf(EXTDescriptorHeap.vkWriteSamplerDescriptorsEXT(this.handle, pSamplers, pDescriptors));
         }
     }
 

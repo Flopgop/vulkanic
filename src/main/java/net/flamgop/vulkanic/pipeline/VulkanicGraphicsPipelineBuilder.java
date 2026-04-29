@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.util.ShaderUtil;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,7 +16,7 @@ import java.util.List;
 public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBuilder {
 
     private final @NotNull VulkanicDevice device;
-    private final @NotNull VulkanicPipelineLayout pipelineLayout;
+    private final @Nullable VulkanicPipelineLayout pipelineLayout;
     private final @Nullable VulkanicRenderPass renderPass;
 
     private int subpass = 0;
@@ -28,16 +29,19 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     private @Nullable VulkanicDepthStencilState depthStencilState = null;
     private @Nullable VulkanicColorBlendState colorBlendState = null;
     private @Nullable VulkanicPipelineDynamicState dynamicState = null;
+    private @Nullable VulkanicDescriptorSetAndBindingMapping descriptorSetAndBindingMapping = null;
     private long pNext = 0;
 
     /// @see VulkanicDevice#createGraphicsPipelineBuilder
     @ApiStatus.Internal
     public VulkanicGraphicsPipelineBuilder(
             @NotNull VulkanicDevice device,
-            @NotNull VulkanicPipelineLayout pipelineLayout,
+            @Nullable VulkanicPipelineLayout pipelineLayout,
             @Nullable VulkanicRenderPass renderPass
     ) {
         this.device = device;
+        if (pipelineLayout == null && !device.features().supportsDescriptorHeap())
+            throw new IllegalArgumentException("A graphics pipeline with a null layout is only supported with the descriptor heap feature!");
         this.pipelineLayout = pipelineLayout;
         if (renderPass == null && !device.features().supportsDynamicRendering())
             throw new IllegalArgumentException("A graphics pipeline with a null render pass is only supported with the dynamic rendering feature!");
@@ -105,6 +109,13 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     }
 
     @Contract(mutates = "this", value = "_ -> this")
+    public @NotNull VulkanicGraphicsPipelineBuilder descriptorSetAndBindingMapping(@Nullable VulkanicDescriptorSetAndBindingMapping mapping) {
+        if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("Device does not support descriptor heap");
+        this.descriptorSetAndBindingMapping = mapping;
+        return this;
+    }
+
+    @Contract(mutates = "this", value = "_ -> this")
     public @NotNull VulkanicGraphicsPipelineBuilder pNext(long pNext) {
         this.pNext = pNext;
         return this;
@@ -130,6 +141,10 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
                 throw new IllegalStateException(String.format("If multisample state is null, dynamic state must contain all of: %s", VulkanicPipelineDynamicState.DYNAMIC_MULTISAMPLE_STATE));
         }
 
+        if (pipelineLayout == null && descriptorSetAndBindingMapping == null) {
+            throw new IllegalStateException("Pipeline must have either pipelineLayout or descriptorSetAndBindingMapping set");
+        }
+
         return device.createGraphicsPipeline(
                 pipelineLayout,
                 renderPass, subpass,
@@ -138,6 +153,7 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
                 viewportState, rasterizationState,
                 multisampleState, depthStencilState,
                 colorBlendState, dynamicState,
+                descriptorSetAndBindingMapping,
                 pNext
         );
     }

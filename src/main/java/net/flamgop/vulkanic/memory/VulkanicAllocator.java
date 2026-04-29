@@ -94,6 +94,7 @@ public class VulkanicAllocator implements AutoCloseable {
             @NotNull VulkanicBufferCreateInfo bufferCreateInfo,
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo
     ) {
+        if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.DESCRIPTOR_HEAP_EXT) && !this.device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("Cannot create a descriptor heap without the descriptor heap feature enabled.");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pBuffer = stack.callocLong(1);
             PointerBuffer pAllocation = stack.callocPointer(1);
