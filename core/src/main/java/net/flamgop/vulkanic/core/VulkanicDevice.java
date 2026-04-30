@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.core;
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
@@ -893,7 +894,7 @@ public class VulkanicDevice implements AutoCloseable {
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult writeResourceDescriptors(List<VulkanicResourceDescriptorInfo> resources, List<ByteBuffer> descriptors) {
         if (!features.supportsDescriptorHeap()) {
-            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the EXTDescriptorHeap feature.");
+            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the descriptorHeap feature.");
         }
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -943,7 +944,7 @@ public class VulkanicDevice implements AutoCloseable {
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult writeSamplerDescriptors(List<VulkanicSamplerCreateInfo> samplers, List<ByteBuffer> descriptors) {
         if (!features.supportsDescriptorHeap()) {
-            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the EXTDescriptorHeap feature.");
+            throw new UnsupportedOperationException("VulkanicDevice#writeResourceDescriptors requires the descriptorHeap feature.");
         }
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -960,6 +961,32 @@ public class VulkanicDevice implements AutoCloseable {
 
             return VulkanicResult.valueOf(EXTDescriptorHeap.vkWriteSamplerDescriptorsEXT(this.handle, pSamplers, pDescriptors));
         }
+    }
+
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicResult getImageOpaqueCaptureData(List<VulkanicImage> images, List<VulkanicHostAddressRange> datas) {
+        if (!features.supportsDescriptorHeapCaptureReplay()) {
+            throw new UnsupportedOperationException("VulkanicDevice#getImageOpaqueCaptureData requires the descriptorHeapCaptureReplay feature.");
+        }
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pImages = stack.callocLong(images.size());
+            for (VulkanicImage image : images) {
+                pImages.put(image.handle());
+            }
+            pImages.flip();
+
+            VkHostAddressRangeEXT.Buffer pDatas = VkHostAddressRangeEXT.calloc(datas.size(), stack);
+            for (int i = 0; i < datas.size(); i++) {
+                pDatas.get(i).address$(datas.get(i).data());
+            }
+
+            return VulkanicResult.valueOf(EXTDescriptorHeap.vkGetImageOpaqueCaptureDataEXT(this.handle, pImages, pDatas));
+        }
+    }
+
+    public @NotNull VulkanicDeviceSize getPhysicalDeviceDescriptorSize(VulkanicDescriptorType type) {
+        return VulkanicDeviceSize.ofBytes(EXTDescriptorHeap.vkGetPhysicalDeviceDescriptorSizeEXT(this.physicalDevice.handle(), type.qualifier()));
     }
 
     public @NotNull CompletableFuture<Void> submitTransient(

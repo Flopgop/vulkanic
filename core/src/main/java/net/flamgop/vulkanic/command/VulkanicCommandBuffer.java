@@ -12,6 +12,8 @@ import net.flamgop.vulkanic.memory.image.VulkanicFilter;
 import net.flamgop.vulkanic.memory.image.VulkanicImage;
 import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
 import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
+import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicHeapBindInfo;
+import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicPushDataInfo;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicRect2D;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicViewport;
 import net.flamgop.vulkanic.sync.VulkanicQueryControlFlag;
@@ -487,6 +489,41 @@ public class VulkanicCommandBuffer implements AutoCloseable {
 
     public void copyQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull VulkanicBuffer dstBuffer, long dstOffset, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
         vkCmdCopyQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, dstBuffer.handle(), dstOffset, stride, flags.mask());
+    }
+
+    public void bindResourceHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
+        if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindResourceHeap requires the descriptor heap feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkBindHeapInfoEXT pBindInfo = VkBindHeapInfoEXT.calloc(stack)
+                    .sType$Default()
+                    .heapRange(r -> r.address$(bindInfo.heapRange().address()).size(bindInfo.heapRange().size().bytes()))
+                    .reservedRangeOffset(bindInfo.reservedRangeOffset().bytes())
+                    .reservedRangeSize(bindInfo.reservedRangeSize().bytes());
+            EXTDescriptorHeap.vkCmdBindResourceHeapEXT(this.handle, pBindInfo);
+        }
+    }
+
+    public void bindSamplerHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
+        if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindSamplerHeap requires the descriptor heap feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkBindHeapInfoEXT pBindInfo = VkBindHeapInfoEXT.calloc(stack)
+                    .sType$Default()
+                    .heapRange(r -> r.address$(bindInfo.heapRange().address()).size(bindInfo.heapRange().size().bytes()))
+                    .reservedRangeOffset(bindInfo.reservedRangeOffset().bytes())
+                    .reservedRangeSize(bindInfo.reservedRangeSize().bytes());
+            EXTDescriptorHeap.vkCmdBindSamplerHeapEXT(this.handle, pBindInfo);
+        }
+    }
+
+    public void pushData(@NotNull VulkanicPushDataInfo pushInfo) {
+        if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#pushData requires the descriptor heap feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkPushDataInfoEXT pPushInfo = VkPushDataInfoEXT.calloc(stack)
+                    .sType$Default()
+                    .data(r -> r.address$(pushInfo.data()))
+                    .offset(pushInfo.offset());
+            EXTDescriptorHeap.vkCmdPushDataEXT(this.handle, pPushInfo);
+        }
     }
 
     @ApiStatus.Internal

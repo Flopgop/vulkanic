@@ -1,5 +1,8 @@
 rootProject.name = "vulkanic"
 
+include("core")
+include("helpers")
+
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {

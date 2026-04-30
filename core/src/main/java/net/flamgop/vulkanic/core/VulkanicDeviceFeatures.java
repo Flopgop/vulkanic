@@ -180,6 +180,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     private boolean robustImageAccess2 = false;
     private boolean nullDescriptor = false;
     private boolean descriptorHeap = false;
+    private boolean descriptorHeapCaptureReplay = false;
 
     public boolean supportsSynchronization2() { return synchronization2; }
     public boolean supportsBufferDeviceAddress() { return bufferDeviceAddress; }
@@ -238,6 +239,7 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
     public boolean supportsRobustImageAccess2() { return robustImageAccess2; }
     public boolean supportsNullDescriptor() { return nullDescriptor; }
     public boolean supportsDescriptorHeap() { return descriptorHeap; }
+    public boolean supportsDescriptorHeapCaptureReplay() { return descriptorHeapCaptureReplay; }
 
     public VulkanicDeviceFeatures() {}
 
@@ -257,6 +259,14 @@ public class VulkanicDeviceFeatures implements AutoCloseable {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    public @NotNull VulkanicDeviceFeatures descriptorHeapCaptureReplay() {
+        this.descriptorHeapCaptureReplay = true;
+        this.extensions.add(EXTDescriptorHeap.VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+        VkPhysicalDeviceDescriptorHeapFeaturesEXT features = getChainedPNext(VkPhysicalDeviceDescriptorHeapFeaturesEXT.class);
+        features.descriptorHeapCaptureReplay(true);
+        return this;
     }
 
     public @NotNull VulkanicDeviceFeatures descriptorHeap() {
