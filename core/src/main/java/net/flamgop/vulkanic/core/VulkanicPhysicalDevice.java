@@ -1,5 +1,6 @@
 package net.flamgop.vulkanic.core;
 
+import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
 import net.flamgop.vulkanic.memory.*;
 import net.flamgop.vulkanic.memory.image.VulkanicImageCreateFlag;
 import net.flamgop.vulkanic.memory.image.VulkanicImageTiling;

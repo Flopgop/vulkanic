@@ -6,6 +6,9 @@ joml = "1.10.8"
 
 jspecify = "1.0.0"
 
+javapoet = "0.14.0"
+auto-service = "1.1.1"
+
 [libraries]
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
@@ -25,3 +28,8 @@ lwjgl-glfw-natives = { group = "org.lwjgl", name = "lwjgl-glfw" }
 lwjgl-sdl-natives = { group = "org.lwjgl", name = "lwjgl-sdl" }
 
 joml = { group = "org.joml", name = "joml", version.ref = "joml" }
+
+# annotation stuff
+javapoet = { group = "com.palantir.javapoet", name = "javapoet", version.ref = "javapoet" }
+google-auto-service-annotations = { group = "com.google.auto.service", name = "auto-service-annotations", version.ref = "auto-service" }
+google-auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }

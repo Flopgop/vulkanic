@@ -1,6 +1,9 @@
 rootProject.name = "vulkanic"
 
 include("core")
+include("annotations")
+include("processor")
+
 include("helpers:glfw")
 include("helpers:sdl")
 

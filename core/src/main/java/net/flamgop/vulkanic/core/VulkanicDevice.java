@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.command.*;
+import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
