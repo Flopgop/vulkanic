@@ -3,11 +3,22 @@ plugins {
     id("maven-publish")
 }
 
+val lwjglNativeTargets = listOf(
+    "natives-linux",
+    "natives-linux-arm64",
+    "natives-macos",
+    "natives-macos-arm64",
+    "natives-windows",
+    "natives-windows-arm64"
+)
+
 dependencies {
     implementation(project(":core"))
 
     api(libs.lwjgl.sdl)
-    implementation(variantOf(libs.lwjgl.sdl.natives) { classifier("natives-windows") })
+    lwjglNativeTargets.forEach { c ->
+        implementation(variantOf(libs.lwjgl.sdl.natives) { classifier(c) })
+    }
 }
 
 publishing {
