@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.pipeline;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
+import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.ShaderUtil;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -12,7 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBuilder {
 
     private final @NotNull VulkanicDevice device;
@@ -20,6 +23,7 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     private final @Nullable VulkanicRenderPass renderPass;
     private final @Nullable VulkanicPipelineRenderingInfo renderingInfo;
 
+    private @NotNull EnumIntBitset<VulkanicPipelineCreateFlag> flags = EnumIntBitset.empty();
     private int subpass = 0;
     private final @NotNull List<@NotNull VulkanicPipelineShaderStage> shaderStages = new ArrayList<>();
     private @Nullable VulkanicVertexInputState vertexInputState = null;
@@ -30,6 +34,8 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     private @Nullable VulkanicDepthStencilState depthStencilState = null;
     private @Nullable VulkanicColorBlendState colorBlendState = null;
     private @Nullable VulkanicPipelineDynamicState dynamicState = null;
+    private @Nullable VulkanicPipeline basePipeline = null;
+    private @NotNull OptionalInt basePipelineIndex = OptionalInt.empty();
     private @Nullable VulkanicDescriptorSetAndBindingMapping descriptorSetAndBindingMapping = null;
     private long pNext = 0;
 
@@ -63,6 +69,24 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
         this.pipelineLayout = pipelineLayout;
         this.renderPass = null;
         this.renderingInfo = renderingInfo;
+    }
+
+    @Contract(mutates = "this", value = "_ -> this")
+    public @NotNull VulkanicGraphicsPipelineBuilder flags(@NotNull EnumIntBitset<VulkanicPipelineCreateFlag> flags) {
+        this.flags = flags;
+        return this;
+    }
+
+    @Contract(mutates = "this", value = "_ -> this")
+    public @NotNull VulkanicGraphicsPipelineBuilder basePipeline(@Nullable VulkanicPipeline base) {
+        this.basePipeline = base;
+        return this;
+    }
+
+    @Contract(mutates = "this", value = "_ -> this")
+    public @NotNull VulkanicGraphicsPipelineBuilder basePipelineIndex(@NotNull OptionalInt index) {
+        this.basePipelineIndex = index;
+        return this;
     }
 
     @Contract(mutates = "this", value = "_ -> this")
@@ -163,17 +187,23 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
         }
 
         return device.createGraphicsPipeline(
-                pipelineLayout,
-                renderPass, subpass,
-                shaderStages,
-                vertexInputState, inputAssemblyState,
-                viewportState, rasterizationState,
-                multisampleState, depthStencilState,
-                colorBlendState, dynamicState,
-                pipelineCache,
-                descriptorSetAndBindingMapping,
-                renderingInfo,
-                pNext
+                new VulkanicGraphicsPipelineCreateInfo(
+                    flags,
+                    pipelineLayout,
+                    renderPass,
+                    subpass,
+                    shaderStages,
+                    vertexInputState, inputAssemblyState,
+                    viewportState, rasterizationState,
+                    multisampleState, depthStencilState,
+                    colorBlendState, dynamicState,
+                    basePipeline,
+                    basePipelineIndex,
+                    descriptorSetAndBindingMapping,
+                    renderingInfo,
+                    pNext
+                ),
+                pipelineCache
         );
     }
 }

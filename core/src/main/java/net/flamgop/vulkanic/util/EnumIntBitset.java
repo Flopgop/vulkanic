@@ -19,6 +19,10 @@ public record EnumIntBitset<T extends Enum<T> & Bitmaskable<Integer>>(Integer ma
     @ApiStatus.Internal
     public EnumIntBitset {}
 
+    public static <T extends Enum<T> & Bitmaskable<Integer>> EnumIntBitset<T> empty() {
+        return new EnumIntBitset<>(0);
+    }
+
     @SafeVarargs
     public static <T extends Enum<T> & Bitmaskable<Integer>> EnumIntBitset<T> of(T... elements) {
         return new EnumIntBitset<>(elements);

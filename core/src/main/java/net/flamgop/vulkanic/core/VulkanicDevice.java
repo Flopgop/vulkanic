@@ -594,194 +594,31 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyRenderPass(this.handle, renderPass.handle(), null);
     }
 
-    @SuppressWarnings("resource")
-    public @NotNull VulkanicComputePipeline createComputePipeline(@NotNull VulkanicPipelineLayout layout, @Nullable VulkanicPipelineCache pipelineCache, @NotNull VulkanicPipelineShaderStage stageInfo) {
+    public @NotNull VulkanicComputePipeline createComputePipeline(@NotNull VulkanicComputePipelineCreateInfo createInfo, @Nullable VulkanicPipelineCache pipelineCache) {
+        createInfo.validate(features);
+
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pPipeline = stack.callocLong(1);
-            VkComputePipelineCreateInfo.Buffer createInfo = VkComputePipelineCreateInfo.calloc(1,stack)
-                    .sType$Default()
-                    .layout(layout.handle())
-                    .stage(stage ->
-                        stage.sType$Default()
-                                .pName(stack.UTF8(stageInfo.entrypoint()))
-                                .pSpecializationInfo(stageInfo.specializationInfo())
-                                .stage(stageInfo.stage().flag())
-                                .module(stageInfo.module().handle())
-                                .flags(stageInfo.flags())
-                                .pNext(stageInfo.pNext())
-                    );
+            VkComputePipelineCreateInfo.Buffer pCreateInfo = VkComputePipelineCreateInfo.calloc(1,stack)
+                            .apply(struct -> createInfo.build(struct, stack));
 
-            VkUtil.check(VK10.vkCreateComputePipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, createInfo, null, pPipeline));
+            VkUtil.check(VK10.vkCreateComputePipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfo, null, pPipeline));
             return new VulkanicComputePipeline(this, pPipeline.get(0));
         }
     }
 
-    @SuppressWarnings("resource")
     public @NotNull VulkanicGraphicsPipeline createGraphicsPipeline(
-            @Nullable VulkanicPipelineLayout layout,
-            @Nullable VulkanicRenderPass renderPass,
-            int subpass,
-            @NotNull List<VulkanicPipelineShaderStage> stages,
-            @Nullable VulkanicVertexInputState vertexInputState,
-            @Nullable VulkanicInputAssemblyState inputAssemblyState,
-            @Nullable VulkanicViewportState viewportState,
-            @Nullable VulkanicRasterizationState rasterizationState,
-            @Nullable VulkanicMultisampleState multisampleState,
-            @Nullable VulkanicDepthStencilState depthStencilState,
-            @Nullable VulkanicColorBlendState colorBlendState,
-            @Nullable VulkanicPipelineDynamicState dynamicState,
-            @Nullable VulkanicPipelineCache pipelineCache,
-            @Nullable VulkanicDescriptorSetAndBindingMapping descriptorSetAndBindingMapping,
-            @Nullable VulkanicPipelineRenderingInfo renderingInfo,
-            long next
+            @NotNull VulkanicGraphicsPipelineCreateInfo createInfo,
+            @Nullable VulkanicPipelineCache pipelineCache
     ) {
-        if (layout == null && (!features.supportsDescriptorHeap() || descriptorSetAndBindingMapping == null)) {
-            throw new UnsupportedOperationException("if layout is null, the descriptor heap feature must be enabled and a descriptor set and binding mapping must be provided.");
-        }
-
-        if (renderPass == null && renderingInfo == null) {
-            throw new UnsupportedOperationException("if renderPass is null, the dynamic rendering info must be provided");
-        }
+        createInfo.validate(features);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(stages.size(), stack);
-            for (int i = 0; i < stages.size(); i++) {
-                VulkanicPipelineShaderStage stageInfo = stages.get(i);
-                shaderStages.get(i)
-                        .sType$Default()
-                        .stage(stageInfo.stage().flag())
-                        .module(stageInfo.module().handle())
-                        .pName(stack.UTF8(stageInfo.entrypoint()))
-                        .pSpecializationInfo(stageInfo.specializationInfo());
-            }
-
-            long pNext = next;
-            if (renderingInfo != null) {
-                VkPipelineRenderingCreateInfoKHR pRenderingInfo = VkPipelineRenderingCreateInfoKHR.calloc(stack)
-                        .sType$Default()
-                        .viewMask(renderingInfo.viewMask())
-                        .colorAttachmentCount(renderingInfo.colorAttachmentFormats().size())
-                        .pColorAttachmentFormats(stack.ints(renderingInfo.colorAttachmentFormats().stream().mapToInt(VulkanicFormat::qualifier).toArray()))
-                        .depthAttachmentFormat(renderingInfo.depthAttachmentFormat() != null ? renderingInfo.depthAttachmentFormat().qualifier() : 0)
-                        .stencilAttachmentFormat(renderingInfo.stencilAttachmentFormat() != null ? renderingInfo.stencilAttachmentFormat().qualifier() : 0)
-                        .pNext(pNext);
-                pNext = pRenderingInfo.address();
-            }
-
-            if (descriptorSetAndBindingMapping != null) {
-                VkDescriptorMappingSourceDataEXT pSourceData = VkDescriptorMappingSourceDataEXT.calloc(stack);
-
-                switch (descriptorSetAndBindingMapping.sourceData()) {
-                    case VulkanicDescriptorMappingSourceData.ConstantOffset constantOffset -> pSourceData.constantOffset(o ->
-                            o
-                                    .heapOffset(constantOffset.heapOffset())
-                                    .heapArrayStride(constantOffset.heapArrayStride())
-                                    .pEmbeddedSampler(constantOffset.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
-                                    .samplerHeapOffset(constantOffset.samplerHeapOffset())
-                                    .samplerHeapArrayStride(constantOffset.samplerHeapArrayStride())
-                    );
-                    case VulkanicDescriptorMappingSourceData.PushIndex pushIndex -> pSourceData.pushIndex(i ->
-                            i
-                                    .heapOffset(pushIndex.heapOffset())
-                                    .pushOffset(pushIndex.pushOffset())
-                                    .heapIndexStride(pushIndex.heapIndexStride())
-                                    .heapArrayStride(pushIndex.heapArrayStride())
-                                    .pEmbeddedSampler(pushIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
-                                    .useCombinedImageSamplerIndex(pushIndex.useCombinedImageSamplerIndex())
-                                    .samplerHeapOffset(pushIndex.samplerHeapOffset())
-                                    .samplerPushOffset(pushIndex.samplerPushOffset())
-                                    .samplerHeapIndexStride(pushIndex.samplerHeapIndexStride())
-                                    .samplerHeapArrayStride(pushIndex.samplerHeapArrayStride())
-                    );
-                    case VulkanicDescriptorMappingSourceData.IndirectIndex indirectIndex -> pSourceData.indirectIndex(i ->
-                            i
-                                    .heapOffset(indirectIndex.heapOffset())
-                                    .pushOffset(indirectIndex.pushOffset())
-                                    .addressOffset(indirectIndex.addressOffset())
-                                    .heapIndexStride(indirectIndex.heapIndexStride())
-                                    .heapArrayStride(indirectIndex.heapArrayStride())
-                                    .pEmbeddedSampler(indirectIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
-                                    .useCombinedImageSamplerIndex(indirectIndex.useCombinedImageSamplerIndex())
-                                    .samplerHeapOffset(indirectIndex.samplerHeapOffset())
-                                    .samplerPushOffset(indirectIndex.samplerPushOffset())
-                                    .samplerAddressOffset(indirectIndex.samplerAddressOffset())
-                                    .samplerHeapIndexStride(indirectIndex.samplerHeapIndexStride())
-                                    .samplerHeapArrayStride(indirectIndex.samplerHeapArrayStride())
-                    );
-                    case VulkanicDescriptorMappingSourceData.IndirectIndexArray indirectIndexArray -> pSourceData.indirectIndexArray(i ->
-                            i
-                                    .heapOffset(indirectIndexArray.heapOffset())
-                                    .pushOffset(indirectIndexArray.pushOffset())
-                                    .addressOffset(indirectIndexArray.addressOffset())
-                                    .heapIndexStride(indirectIndexArray.heapIndexStride())
-                                    .pEmbeddedSampler(indirectIndexArray.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
-                                    .useCombinedImageSamplerIndex(indirectIndexArray.useCombinedImageSamplerIndex())
-                                    .samplerHeapOffset(indirectIndexArray.samplerHeapOffset())
-                                    .samplerPushOffset(indirectIndexArray.samplerPushOffset())
-                                    .samplerAddressOffset(indirectIndexArray.samplerAddressOffset())
-                                    .samplerHeapIndexStride(indirectIndexArray.samplerHeapIndexStride())
-                    );
-                    case VulkanicDescriptorMappingSourceData.HeapData heapData -> pSourceData.heapData(h ->
-                            h
-                                    .heapOffset(heapData.heapOffset())
-                                    .pushOffset(heapData.pushOffset())
-                    );
-                    case VulkanicDescriptorMappingSourceData.PushDataOffset pushDataOffset -> pSourceData.pushDataOffset(pushDataOffset.value());
-                    case VulkanicDescriptorMappingSourceData.PushAddressOffset pushAddressOffset -> pSourceData.pushAddressOffset(pushAddressOffset.value());
-                    case VulkanicDescriptorMappingSourceData.IndirectAddress indirectAddress -> pSourceData.indirectAddress(i ->
-                            i
-                                    .pushOffset(indirectAddress.pushOffset())
-                                    .addressOffset(indirectAddress.addressOffset())
-                    );
-                    case VulkanicDescriptorMappingSourceData.ShaderRecordIndex shaderRecordIndex -> pSourceData.shaderRecordIndex(s ->
-                            s
-                                    .heapOffset(shaderRecordIndex.heapOffset())
-                                    .shaderRecordOffset(shaderRecordIndex.shaderRecordOffset())
-                                    .heapIndexStride(shaderRecordIndex.heapIndexStride())
-                                    .heapArrayStride(shaderRecordIndex.heapArrayStride())
-                                    .pEmbeddedSampler(shaderRecordIndex.embeddedSampler().populate(VkSamplerCreateInfo.calloc(stack)))
-                                    .useCombinedImageSamplerIndex(shaderRecordIndex.useCombinedImageSamplerIndex())
-                                    .samplerHeapOffset(shaderRecordIndex.samplerHeapOffset())
-                                    .samplerShaderRecordOffset(shaderRecordIndex.samplerShaderRecordOffset())
-                                    .samplerHeapIndexStride(shaderRecordIndex.samplerHeapIndexStride())
-                                    .samplerHeapArrayStride(shaderRecordIndex.samplerHeapArrayStride())
-                    );
-                    case VulkanicDescriptorMappingSourceData.ShaderRecordDataOffset shaderRecordDataOffset -> pSourceData.shaderRecordDataOffset(shaderRecordDataOffset.value());
-                    case VulkanicDescriptorMappingSourceData.ShaderRecordAddressOffset shaderRecordAddressOffset -> pSourceData.shaderRecordAddressOffset(shaderRecordAddressOffset.value());
-                }
-
-                pNext = VkDescriptorSetAndBindingMappingEXT.calloc(stack)
-                        .sType$Default()
-                        .descriptorSet(descriptorSetAndBindingMapping.descriptorSet())
-                        .firstBinding(descriptorSetAndBindingMapping.firstBinding())
-                        .bindingCount(descriptorSetAndBindingMapping.bindingCount())
-                        .resourceMask(descriptorSetAndBindingMapping.resourceMask().mask())
-                        .source(descriptorSetAndBindingMapping.source().qualifier())
-                        .sourceData(pSourceData)
-                        .pNext(pNext)
-                        .address();
-            };
-
             LongBuffer pPipeline = stack.callocLong(1);
-            VkGraphicsPipelineCreateInfo.Buffer createInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack)
-                    .sType$Default()
-                    .pStages(shaderStages)
-                    .pVertexInputState(vertexInputState != null ? vertexInputState.build(stack) : null)
-                    .pInputAssemblyState(inputAssemblyState != null ? inputAssemblyState.build(stack) : null)
-                    .pViewportState(viewportState != null ? viewportState.build(stack) : null)
-                    .pRasterizationState(rasterizationState != null ? rasterizationState.build(stack) : null)
-                    .pMultisampleState(multisampleState != null ? multisampleState.build(stack) : null)
-                    .pDepthStencilState(depthStencilState != null ? depthStencilState.build(stack) : null)
-                    .pColorBlendState(colorBlendState != null ? colorBlendState.build(stack) : null)
-                    .pDynamicState(dynamicState != null ? dynamicState.build(stack) : null)
-                    .layout(layout != null ? layout.handle() : VK10.VK_NULL_HANDLE)
-                    .renderPass(renderPass != null ? renderPass.handle() : VK10.VK_NULL_HANDLE)
-                    .subpass(subpass)
-                    .basePipelineHandle(VK10.VK_NULL_HANDLE)
-                    .basePipelineIndex(-1)
-                    .pNext(pNext);
+            VkGraphicsPipelineCreateInfo.Buffer pCreateInfos = VkGraphicsPipelineCreateInfo.calloc(1, stack)
+                    .apply(struct -> createInfo.build(struct, stack));
 
-            VkUtil.check(VK10.vkCreateGraphicsPipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, createInfo, null, pPipeline));
+            VkUtil.check(VK10.vkCreateGraphicsPipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfos, null, pPipeline));
 
             return new VulkanicGraphicsPipeline(this, pPipeline.get(0));
         }
@@ -1053,6 +890,23 @@ public class VulkanicDevice implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pDataSize = stack.callocPointer(1);
             return VulkanicResult.valueOf(VK10.vkGetPipelineCacheData(this.handle, cache.handle(), pDataSize, buffer));
+        }
+    }
+
+    // TODO: deferred operation
+    public @NotNull VulkanicRayTracingPipeline createRayTracingPipeline(
+            @NotNull VulkanicRayTracingPipelineCreateInfo createInfo,
+            @Nullable VulkanicPipelineCache cache
+    ) {
+        createInfo.validate(features);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pOut = stack.callocLong(1);
+            VkRayTracingPipelineCreateInfoKHR.Buffer pCreateInfos = VkRayTracingPipelineCreateInfoKHR.calloc(1, stack)
+                    .apply(struct -> createInfo.build(struct, stack));
+
+            VkUtil.check(KHRRayTracingPipeline.vkCreateRayTracingPipelinesKHR(this.handle, 0, cache != null ? cache.handle() : 0, pCreateInfos, null, pOut));
+            return new VulkanicRayTracingPipeline(this, pOut.get(0));
         }
     }
 

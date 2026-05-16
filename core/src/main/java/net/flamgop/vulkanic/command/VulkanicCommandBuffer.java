@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicStridedDeviceAddressRegion;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.VulkanicIndexType;
@@ -518,12 +519,53 @@ public class VulkanicCommandBuffer implements AutoCloseable {
     public void pushData(@NotNull VulkanicPushDataInfo pushInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#pushData requires the descriptor heap feature");
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkPushDataInfoEXT pPushInfo = VkPushDataInfoEXT.calloc(stack)
-                    .sType$Default()
-                    .data(r -> r.address$(pushInfo.data()))
-                    .offset(pushInfo.offset());
-            EXTDescriptorHeap.vkCmdPushDataEXT(this.handle, pPushInfo);
+            EXTDescriptorHeap.vkCmdPushDataEXT(this.handle, pushInfo.build(stack));
         }
+    }
+
+    public void traceRays(
+            VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion missShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion hitShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion callableShaderBindingTable,
+            int width, int height, int depth
+    ) {
+        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            KHRRayTracingPipeline.vkCmdTraceRaysKHR(
+                    this.handle,
+                    raygenShaderBindingTable.build(stack),
+                    missShaderBindingTable.build(stack),
+                    hitShaderBindingTable.build(stack),
+                    callableShaderBindingTable.build(stack),
+                    width, height, depth
+            );
+        }
+    }
+
+    public void traceRaysIndirect(
+            VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion missShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion hitShaderBindingTable,
+            VulkanicStridedDeviceAddressRegion callableShaderBindingTable,
+            VulkanicBuffer indirect
+    ) {
+        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            KHRRayTracingPipeline.vkCmdTraceRaysIndirectKHR(
+                    this.handle,
+                    raygenShaderBindingTable.build(stack),
+                    missShaderBindingTable.build(stack),
+                    hitShaderBindingTable.build(stack),
+                    callableShaderBindingTable.build(stack),
+                    indirect.deviceAddress()
+            );
+        }
+    }
+
+    public void setRayTracingPipelineStackSize(int pipelineStackSize) {
+        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
+        KHRRayTracingPipeline.vkCmdSetRayTracingPipelineStackSizeKHR(this.handle, pipelineStackSize);
     }
 
     @ApiStatus.Internal
