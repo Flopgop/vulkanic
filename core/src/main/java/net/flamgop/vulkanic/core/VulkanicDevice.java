@@ -911,6 +911,7 @@ public class VulkanicDevice implements AutoCloseable {
             LongBuffer pOut = stack.callocLong(1);
             VkRayTracingPipelineCreateInfoKHR.Buffer pCreateInfos = VkRayTracingPipelineCreateInfoKHR.calloc(1, stack)
                     .apply(struct -> createInfo.build(struct, stack));
+            pCreateInfos.flip();
 
             VkUtil.check(KHRRayTracingPipeline.vkCreateRayTracingPipelinesKHR(this.handle, 0, cache != null ? cache.handle() : 0, pCreateInfos, null, pOut));
             return new VulkanicRayTracingPipeline(this, pOut.get(0));
