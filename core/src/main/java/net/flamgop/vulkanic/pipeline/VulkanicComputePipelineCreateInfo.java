@@ -22,6 +22,14 @@ public record VulkanicComputePipelineCreateInfo(
         @Nullable VulkanicDescriptorSetAndBindingMapping descriptorSetAndBindingMapping,
         long pNext
 ) {
+    public VulkanicComputePipelineCreateInfo(
+            @NotNull EnumIntBitset<VulkanicPipelineCreateFlag> flags,
+            @Nullable VulkanicPipelineLayout layout,
+            @NotNull VulkanicPipelineShaderStage stageInfo
+    ) {
+        this(flags, layout, stageInfo, null, OptionalInt.empty(), null, 0);
+    }
+
     public void validate(VulkanicDeviceFeatures features) {
         if (layout == null && (!features.supportsDescriptorHeap() || descriptorSetAndBindingMapping == null)) {
             throw new UnsupportedOperationException("if layout is null, the descriptor heap feature must be enabled and a descriptor set and binding mapping must be provided.");

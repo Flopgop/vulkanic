@@ -601,10 +601,11 @@ public class VulkanicDevice implements AutoCloseable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pPipeline = stack.callocLong(1);
-            VkComputePipelineCreateInfo.Buffer pCreateInfo = VkComputePipelineCreateInfo.calloc(1,stack)
+            VkComputePipelineCreateInfo.Buffer pCreateInfos = VkComputePipelineCreateInfo.calloc(1,stack)
                             .apply(struct -> createInfo.build(struct, stack));
+            pCreateInfos.flip();
 
-            VkUtil.check(VK10.vkCreateComputePipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfo, null, pPipeline));
+            VkUtil.check(VK10.vkCreateComputePipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfos, null, pPipeline));
             return new VulkanicComputePipeline(this, pPipeline.get(0));
         }
     }
@@ -619,6 +620,7 @@ public class VulkanicDevice implements AutoCloseable {
             LongBuffer pPipeline = stack.callocLong(1);
             VkGraphicsPipelineCreateInfo.Buffer pCreateInfos = VkGraphicsPipelineCreateInfo.calloc(1, stack)
                     .apply(struct -> createInfo.build(struct, stack));
+            pCreateInfos.flip();
 
             VkUtil.check(VK10.vkCreateGraphicsPipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfos, null, pPipeline));
 
