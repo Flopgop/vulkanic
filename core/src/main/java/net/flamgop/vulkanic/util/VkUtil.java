@@ -1,5 +1,7 @@
 package net.flamgop.vulkanic.util;
 
+import net.flamgop.vulkanic.exception.VulkanException;
+import net.flamgop.vulkanic.exception.VulkanicResult;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
@@ -70,9 +72,10 @@ public class VkUtil {
         };
     }
 
-    public static void check(int ret) {
+    public static void check(int ret) throws VulkanException {
         if (ret < 0) { // note: *technically* there are other results that are not VK_SUCCESS, but are positive values and aren't technically fatal errors, and you probably don't want an assert to fail for a basic suboptimal error or something
-            throw new AssertionError(String.format("VkUtil#check failed with %s (error code: %d)", errorToString(ret), ret));
+//            throw new AssertionError(String.format("VkUtil#check failed with %s (error code: %d)", errorToString(ret), ret));
+            throw new VulkanException(VulkanicResult.valueOf(ret));
         }
     }
 

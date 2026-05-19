@@ -6,6 +6,7 @@ include("processor")
 
 include("helpers:glfw")
 include("helpers:sdl")
+include("helpers:debug")
 
 dependencyResolutionManagement {
     versionCatalogs {

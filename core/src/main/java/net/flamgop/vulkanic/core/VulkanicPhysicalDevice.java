@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.vulkan.VK11.*;
 
@@ -38,53 +40,28 @@ public class VulkanicPhysicalDevice {
     }
 
     public boolean supportsFeatures(@NotNull VulkanicDeviceFeatures features) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkPhysicalDeviceVulkan12Features vk12 = VkPhysicalDeviceVulkan12Features.calloc(stack).sType$Default();
-            VkPhysicalDeviceSynchronization2Features sync2 = VkPhysicalDeviceSynchronization2Features.calloc(stack).sType$Default();
-            VkPhysicalDeviceDynamicRenderingFeatures dynamic = VkPhysicalDeviceDynamicRenderingFeatures.calloc(stack).sType$Default();
-            VkPhysicalDeviceMeshShaderFeaturesEXT mesh = VkPhysicalDeviceMeshShaderFeaturesEXT.calloc(stack).sType$Default();
-            VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended3 = VkPhysicalDeviceExtendedDynamicState3FeaturesEXT.calloc(stack).sType$Default();
-
-            VkPhysicalDeviceFeatures2 features2 = VkPhysicalDeviceFeatures2.calloc(stack)
-                    .sType$Default()
-                    .pNext(vk12.address());
-            vk12.pNext(sync2.address());
-            sync2.pNext(dynamic.address());
-            dynamic.pNext(mesh.address());
-            mesh.pNext(extended3.address());
-
-            vkGetPhysicalDeviceFeatures2(this.handle, features2);
-
-            if (features.supportsBufferDeviceAddress() && !vk12.bufferDeviceAddress()) return false;
-            if (features.supportsSynchronization2() && !sync2.synchronization2()) return false;
-            if (features.supportsDynamicRendering() && !dynamic.dynamicRendering()) return false;
-            if (features.supportsMeshShader() && !mesh.meshShader()) return false;
-            if (features.supportsTaskShader() && !mesh.taskShader()) return false;
-            if (features.supportsFillModeNonSolid() && !features2.features().fillModeNonSolid()) return false;
-            if (features.supportsShaderInt64() && !features2.features().shaderInt64()) return false;
-            // TODO: make this not stupid
-
-            return true;
-        }
+        Set<String> extensions = this.supportedExtensions().stream().map(VulkanicExtensionProperties::name).collect(Collectors.toSet());
+        return features.isSupportedBy(this) && extensions.containsAll(features.requiredExtensions());
     }
 
     public @NotNull List<VulkanicExtensionProperties> supportedExtensions() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pCount = stack.callocInt(1);
             vkEnumerateDeviceExtensionProperties(this.handle, (ByteBuffer) null, pCount, null);
-            VkExtensionProperties.Buffer pExtensionProperties = VkExtensionProperties.calloc(pCount.get(0)); // note: on certain very capable graphics cards this will overflow the stack, so this is heap allocated.
-            vkEnumerateDeviceExtensionProperties(this.handle, (ByteBuffer) null, pCount, pExtensionProperties);
+            try (VkExtensionProperties.Buffer pExtensionProperties = VkExtensionProperties.calloc(pCount.get(0))) { // note: on certain very capable graphics cards this will overflow the stack, so this is heap allocated.
+                vkEnumerateDeviceExtensionProperties(this.handle, (ByteBuffer) null, pCount, pExtensionProperties);
 
-            List<VulkanicExtensionProperties> extensionProperties = new ArrayList<>();
-            for (int i = 0; i < pCount.get(0); i++) {
-                VkExtensionProperties properties = pExtensionProperties.get(i);
-                extensionProperties.add(new VulkanicExtensionProperties(
-                        properties.extensionNameString(),
-                        properties.specVersion()
-                ));
+                List<VulkanicExtensionProperties> extensionProperties = new ArrayList<>();
+                for (int i = 0; i < pCount.get(0); i++) {
+                    VkExtensionProperties properties = pExtensionProperties.get(i);
+                    extensionProperties.add(new VulkanicExtensionProperties(
+                            properties.extensionNameString(),
+                            properties.specVersion()
+                    ));
+                }
+
+                return extensionProperties;
             }
-
-            return extensionProperties;
         }
     }
 

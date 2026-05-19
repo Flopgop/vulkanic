@@ -10,6 +10,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.*;
 
+// TODO: this still isn't very good, but it functions
+/// @apiNote !! This must be closed after it is used !!
 public class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements AutoCloseable {
 
     public static VulkanicDeviceFeatures roadmap2022() {
@@ -122,7 +124,7 @@ public class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements
 
     @VulkanFeature(extension = KHRPresentModeFifoLatestReady.VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME, featuresStruct = VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR.class)
     private static final boolean presentModeFifoLatestReady = false;
-    @VulkanFeature(extension = EXTMeshShader.VK_EXT_MESH_SHADER_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceSynchronization2Features.class)
+    @VulkanFeature(extension = KHRSynchronization2.VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceSynchronization2Features.class)
     private static final boolean synchronization2 = false;
     @VulkanFeature(extension = KHRBufferDeviceAddress.VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceBufferDeviceAddressFeatures.class)
     private static final boolean bufferDeviceAddress = false;
@@ -138,7 +140,7 @@ public class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements
     private static final boolean shaderInt64 = false;
     @VulkanFeature(extension = EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceDescriptorIndexingFeatures.class)
     private static final boolean runtimeDescriptorArray = false;
-    @VulkanFeature(extension = EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceDescriptorIndexingFeatures.class, setter = "$$SPECIAL_IGNORE$$")
+    @VulkanExtension(EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     private static final boolean descriptorIndexing = false;
     @VulkanFeature(extension = KHRShaderDrawParameters.VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceShaderDrawParametersFeatures.class)
     private static final boolean shaderDrawParameters = false;

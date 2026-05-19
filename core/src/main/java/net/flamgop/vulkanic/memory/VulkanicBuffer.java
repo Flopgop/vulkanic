@@ -1,5 +1,6 @@
 package net.flamgop.vulkanic.memory;
 
+import net.flamgop.vulkanic.exception.VulkanException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,9 @@ public class VulkanicBuffer implements AutoCloseable {
     private final long handle;
     private final long allocation;
 
+    private final VulkanicBufferCreateInfo bufferCreateInfo;
+    private final VulkanicAllocationCreateInfo allocationCreateInfo;
+
     private final int memoryType;
     private final long deviceMemory;
     private final long offset;
@@ -20,18 +24,29 @@ public class VulkanicBuffer implements AutoCloseable {
 
     /// @see VulkanicAllocator#createBuffer
     @ApiStatus.Internal
-    public VulkanicBuffer(@NotNull VulkanicAllocator allocator, long handle, long allocation, @NotNull VmaAllocationInfo allocationInfo) {
+    public VulkanicBuffer(@NotNull VulkanicAllocator allocator, long handle, long allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicBufferCreateInfo bufferCreateInfo, @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
+
+        this.bufferCreateInfo = bufferCreateInfo;
+        this.allocationCreateInfo = allocationCreateInfo;
 
         this.memoryType = allocationInfo.memoryType();
         this.deviceMemory = allocationInfo.deviceMemory();
         this.offset = allocationInfo.offset();
         this.size = VulkanicDeviceSize.ofBytes(allocationInfo.size());
 
-        if (this.allocator.supportsBufferDeviceAddress()) this.deviceAddress = allocator.getBufferDeviceAddress(this);
+        if (this.bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS)) this.deviceAddress = allocator.getBufferDeviceAddress(this);
         else deviceAddress = -1;
+    }
+
+    public VulkanicBufferCreateInfo createInfo() {
+        return bufferCreateInfo;
+    }
+
+    public VulkanicAllocationCreateInfo allocationCreateInfo() {
+        return allocationCreateInfo;
     }
 
     public void invalidate() {
@@ -43,7 +58,7 @@ public class VulkanicBuffer implements AutoCloseable {
         return deviceAddress;
     }
 
-    public @NotNull MappedMemory map() {
+    public @NotNull MappedMemory map() throws VulkanException {
         return this.allocator.mapMemory(this.allocation);
     }
 

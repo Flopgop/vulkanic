@@ -32,10 +32,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -47,7 +44,7 @@ public class VulkanicDevice implements AutoCloseable {
     private final VulkanicPhysicalDevice physicalDevice;
     private final VulkanicDeviceFeatures features;
 
-    private final List<VulkanicQueueFamily> queueFamilies;
+    private final Map<Integer, VulkanicQueueFamily> queueFamilies;
 
     private final Collection<String> enabledExtensions;
     private final List<String> enabledLayers;
@@ -66,9 +63,9 @@ public class VulkanicDevice implements AutoCloseable {
         this.handle = handle;
         this.physicalDevice = physicalDevice;
         this.features = features;
-        this.queueFamilies = new ArrayList<>(queueInfos.size());
+        this.queueFamilies = new HashMap<>(queueInfos.size());
         for (VulkanicQueueInfo createInfo : queueInfos) {
-            queueFamilies.add(new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
+            queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
         }
         this.enabledExtensions = List.copyOf(extensions);
         this.enabledLayers = List.copyOf(layers);
@@ -97,20 +94,20 @@ public class VulkanicDevice implements AutoCloseable {
             @NotNull Collection<String> layers,
             @NotNull List<VulkanicQueueInfo> queueCreateInfos,
             @NotNull VulkanicDeviceFeatures features
-    ) {
+    ) throws VulkanException {
         this.instance = instance;
         this.features = features;
         this.physicalDevice = physicalDevice;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pDevice = stack.callocPointer(1);
 
-            List<String> requiredExtensions = new ArrayList<>(features.requiredExtensions());
+            Set<String> requiredExtensions = new LinkedHashSet<>(features.requiredExtensions());
             requiredExtensions.addAll(extensions);
 
             this.enabledExtensions = requiredExtensions;
             this.enabledLayers = List.copyOf(layers);
 
-            assertSupportsAllExtensions(physicalDevice, requiredExtensions);
+            if (!physicalDevice.supportsFeatures(features)) throw new UnsupportedOperationException("Requested device features are not supported by the selected physical device.");
 
             PointerBuffer layersBuf = stack.callocPointer(layers.size());
             PointerBuffer extensionsBuf = stack.callocPointer(requiredExtensions.size());
@@ -140,9 +137,9 @@ public class VulkanicDevice implements AutoCloseable {
             VkUtil.check(VK11.vkCreateDevice(physicalDevice.handle(), ci, null, pDevice));
             handle = new VkDevice(pDevice.get(0), physicalDevice.handle(), ci);
 
-            this.queueFamilies = new ArrayList<>(queueCreateInfos.size());
+            this.queueFamilies = new HashMap<>(queueCreateInfos.size());
             for (VulkanicQueueInfo createInfo : queueCreateInfos) {
-                queueFamilies.add(new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
+                queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
             }
         }
     }
@@ -171,7 +168,10 @@ public class VulkanicDevice implements AutoCloseable {
         return features;
     }
 
-    public @NotNull VulkanicQueueFamily queueFamily(int index) {
+    /// @apiNote index refers to the actual queue family index as determined during queue family enumeration (i.e., at device creation time)
+    /// @param index the queue family index of the queue family
+    /// @return the VulkanicQueueFamily for the queue family index, or null if that index was not passed as a VulkanicQueueInfo to this device's constructor
+    public @Nullable VulkanicQueueFamily queueFamily(int index) {
         return queueFamilies.get(index);
     }
 
@@ -184,7 +184,7 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicFence createFence(EnumIntBitset<VulkanicFenceCreateFlag> createFlags) {
+    public @NotNull VulkanicFence createFence(EnumIntBitset<VulkanicFenceCreateFlag> createFlags) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkFenceCreateInfo createInfo = VkFenceCreateInfo.calloc(stack)
                     .flags(createFlags.mask())
@@ -234,7 +234,7 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicSemaphore createSemaphore(@NotNull VulkanicSemaphoreType type, long initialValue) {
+    public @NotNull VulkanicSemaphore createSemaphore(@NotNull VulkanicSemaphoreType type, long initialValue) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSemaphoreCreateInfo createInfo = VkSemaphoreCreateInfo.calloc(stack)
                     .pNext(VkSemaphoreTypeCreateInfo.calloc(stack)
@@ -244,7 +244,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .sType$Default();
 
             LongBuffer pSemaphore = stack.callocLong(1);
-            VK11.vkCreateSemaphore(this.handle, createInfo, null, pSemaphore);
+            VkUtil.check(VK11.vkCreateSemaphore(this.handle, createInfo, null, pSemaphore));
             return new VulkanicSemaphore(this, pSemaphore.get(0), type);
         }
     }
@@ -256,14 +256,14 @@ public class VulkanicDevice implements AutoCloseable {
     public @NotNull VulkanicCommandPool createCommandPool(
             EnumIntBitset<VulkanicCommandPoolCreateFlag> flags,
             VulkanicQueueFamily queueFamily
-    ) {
+    ) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandPoolCreateInfo createInfo =  VkCommandPoolCreateInfo.calloc(stack)
                     .sType$Default()
                     .flags(flags.mask())
                     .queueFamilyIndex(queueFamily.index());
             LongBuffer pCommandPool = stack.callocLong(1);
-            VK11.vkCreateCommandPool(this.handle, createInfo, null, pCommandPool);
+            VkUtil.check(VK11.vkCreateCommandPool(this.handle, createInfo, null, pCommandPool));
             return new VulkanicCommandPool(this, pCommandPool.get(0));
         }
     }
@@ -276,7 +276,7 @@ public class VulkanicDevice implements AutoCloseable {
         return VK11.vkResetCommandPool(this.handle, commandPool.handle(), flags);
     }
 
-    public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level) {
+    public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandBufferAllocateInfo pAllocateInfo = VkCommandBufferAllocateInfo.calloc(stack)
                     .sType$Default()
@@ -284,12 +284,12 @@ public class VulkanicDevice implements AutoCloseable {
                     .level(level.qualifier())
                     .commandBufferCount(1);
             PointerBuffer pCommandBuffers = stack.callocPointer(1);
-            VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers);
+            VkUtil.check(VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers));
             return new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(0), this.handle));
         }
     }
 
-    public @NotNull VulkanicCommandBuffer[] allocateCommandBuffers(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level, int count) {
+    public @NotNull VulkanicCommandBuffer[] allocateCommandBuffers(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level, int count) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandBufferAllocateInfo pAllocateInfo = VkCommandBufferAllocateInfo.calloc(stack)
                     .sType$Default()
@@ -297,7 +297,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .level(level.qualifier())
                     .commandBufferCount(count);
             PointerBuffer pCommandBuffers = stack.callocPointer(count);
-            VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers);
+            VkUtil.check(VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers));
             VulkanicCommandBuffer[] commandBuffers = new VulkanicCommandBuffer[count];
             for (int i = 0; i < count; i++) commandBuffers[i] = new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(i), this.handle));
             return commandBuffers;
@@ -331,7 +331,7 @@ public class VulkanicDevice implements AutoCloseable {
         return VulkanicResult.valueOf(VK11.vkResetCommandBuffer(commandBuffer.handle(), flags));
     }
 
-    public @NotNull VulkanicImageView createImageView(@NotNull VulkanicImage image, @NotNull VulkanicImageViewCreateInfo imageViewCreateInfo) {
+    public @NotNull VulkanicImageView createImageView(@NotNull VulkanicImage image, @NotNull VulkanicImageViewCreateInfo imageViewCreateInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pImageView = stack.callocLong(1);
             VkImageViewCreateInfo createInfo = VkImageViewCreateInfo.calloc(stack)
@@ -359,21 +359,22 @@ public class VulkanicDevice implements AutoCloseable {
         VK11.vkDestroyImageView(this.handle, imageView.handle(), null);
     }
 
-    public @NotNull VulkanicShaderModule createShaderModule(byte @NotNull [] code) {
+    public @NotNull VulkanicShaderModule createShaderModule(byte @NotNull [] code) throws VulkanException {
         ByteBuffer pCode = MemoryUtil.memAlloc(code.length);
-        pCode.put(code);
-        pCode.flip();
-        VulkanicShaderModule module = createShaderModule(pCode);
-        MemoryUtil.memFree(pCode);
-        return module;
+        try {
+            pCode.put(code).flip();
+            return createShaderModule(pCode);
+        } finally {
+            MemoryUtil.memFree(pCode);
+        }
     }
 
-    public @NotNull VulkanicShaderModule createShaderModule(@NotNull ByteBuffer pCode) {
+    public @NotNull VulkanicShaderModule createShaderModule(@NotNull ByteBuffer pCode) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pShaderModule = stack.callocLong(1);
-            VK10.vkCreateShaderModule(handle, VkShaderModuleCreateInfo.calloc(stack)
+            VkUtil.check(VK10.vkCreateShaderModule(handle, VkShaderModuleCreateInfo.calloc(stack)
                     .sType$Default()
-                    .pCode(pCode), null, pShaderModule);
+                    .pCode(pCode), null, pShaderModule));
             return new VulkanicShaderModule(this, pShaderModule.get(0));
         }
     }
@@ -383,17 +384,17 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     @Deprecated(forRemoval = true)
-    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull VkPipelineLayoutCreateInfo createInfo) {
+    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull VkPipelineLayoutCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pPipelineLayout = stack.callocLong(1);
-            VK10.vkCreatePipelineLayout(handle, createInfo, null, pPipelineLayout);
+            VkUtil.check(VK10.vkCreatePipelineLayout(handle, createInfo, null, pPipelineLayout));
             VkPushConstantRange.Buffer pushConstantRanges = createInfo.pPushConstantRanges();
             return new VulkanicPipelineLayout(this, pPipelineLayout.get(0), pushConstantRanges != null && pushConstantRanges.capacity() > 0 ? pushConstantRanges.get(0).size() : 0);
         }
     }
 
     @SuppressWarnings("resource")
-    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts, @NotNull List<@NotNull VulkanicPushConstantRange> pushConstantRanges) {
+    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts, @NotNull List<@NotNull VulkanicPushConstantRange> pushConstantRanges) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPushConstantRange.Buffer pPushConstantRanges = VkPushConstantRange.calloc(pushConstantRanges.size(), stack);
             for (int i = 0; i < pushConstantRanges.size(); i++) {
@@ -416,7 +417,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .setLayoutCount(setLayouts.size());
 
             LongBuffer pPipelineLayout = stack.callocLong(1);
-            VK10.vkCreatePipelineLayout(handle, createInfo, null, pPipelineLayout);
+            VkUtil.check(VK10.vkCreatePipelineLayout(handle, createInfo, null, pPipelineLayout));
             return new VulkanicPipelineLayout(this, pPipelineLayout.get(0), pPushConstantRanges.capacity() > 0 ? pPushConstantRanges.get(0).size() : 0);
         }
     }
@@ -426,7 +427,7 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     @SuppressWarnings("resource")
-    public @NotNull VulkanicDescriptorSetLayout createDescriptorSetLayout(@NotNull EnumIntBitset<VulkanicDescriptorSetLayoutCreateFlag> flags, @NotNull List<@NotNull VulkanicDescriptorSetLayoutBinding> bindings) {
+    public @NotNull VulkanicDescriptorSetLayout createDescriptorSetLayout(@NotNull EnumIntBitset<VulkanicDescriptorSetLayoutCreateFlag> flags, @NotNull List<@NotNull VulkanicDescriptorSetLayoutBinding> bindings) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDescriptorSetLayoutBinding.Buffer pBindings = VkDescriptorSetLayoutBinding.calloc(bindings.size(), stack);
             for (int i = 0; i < bindings.size(); i++) {
@@ -450,7 +451,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .pBindings(pBindings);
 
             LongBuffer pSetLayout = stack.callocLong(1);
-            VK10.vkCreateDescriptorSetLayout(handle, createInfo, null, pSetLayout);
+            VkUtil.check(VK10.vkCreateDescriptorSetLayout(handle, createInfo, null, pSetLayout));
             return new VulkanicDescriptorSetLayout(this, pSetLayout.get(0));
         }
     }
@@ -535,7 +536,7 @@ public class VulkanicDevice implements AutoCloseable {
             @NotNull EnumIntBitset<VulkanicDescriptorPoolCreateFlag> flags,
             int maxSets,
             @NotNull List<VulkanicDescriptorPoolSize> poolSizes
-    ) {
+    ) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDescriptorPoolSize.Buffer pPoolSizes = VkDescriptorPoolSize.calloc(poolSizes.size(), stack);
             for (int i = 0; i < poolSizes.size(); i++) {
@@ -551,7 +552,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .maxSets(maxSets)
                     .pPoolSizes(pPoolSizes);
             LongBuffer pDescriptorPool = stack.callocLong(1);
-            VK10.vkCreateDescriptorPool(handle, createInfo, null, pDescriptorPool);
+            VkUtil.check(VK10.vkCreateDescriptorPool(handle, createInfo, null, pDescriptorPool));
             return new VulkanicDescriptorPool(this, pDescriptorPool.get(0));
         }
     }
@@ -560,7 +561,7 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyDescriptorPool(handle, descriptorPool.handle(), null);
     }
 
-    public @NotNull VulkanicDescriptorSet[] allocateDescriptorSets(@NotNull VulkanicDescriptorPool pool, @NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts) {
+    public @NotNull VulkanicDescriptorSet[] allocateDescriptorSets(@NotNull VulkanicDescriptorPool pool, @NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pSetLayouts = stack.callocLong(setLayouts.size());
             for (int i = 0; i < setLayouts.size(); i++) {
@@ -572,7 +573,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .pSetLayouts(pSetLayouts);
 
             LongBuffer pDescriptorSet = stack.callocLong(setLayouts.size());
-            VK10.vkAllocateDescriptorSets(handle, allocateInfo, pDescriptorSet);
+            VkUtil.check(VK10.vkAllocateDescriptorSets(handle, allocateInfo, pDescriptorSet));
 
             VulkanicDescriptorSet[] descriptorSets = new VulkanicDescriptorSet[setLayouts.size()];
             for (int i = 0; i < setLayouts.size(); i++) {
@@ -582,10 +583,11 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicRenderPass createRenderPass(@NotNull VkRenderPassCreateInfo createInfo) {
+    @ApiStatus.Experimental
+    public @NotNull VulkanicRenderPass createRenderPass(@NotNull VkRenderPassCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pRenderPass = stack.callocLong(1);
-            VK10.vkCreateRenderPass(handle, createInfo, null, pRenderPass);
+            VkUtil.check(VK10.vkCreateRenderPass(handle, createInfo, null, pRenderPass));
             return new VulkanicRenderPass(this, pRenderPass.get(0));
         }
     }
@@ -594,7 +596,7 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyRenderPass(this.handle, renderPass.handle(), null);
     }
 
-    public @NotNull VulkanicComputePipeline createComputePipeline(@NotNull VulkanicComputePipelineCreateInfo createInfo, @Nullable VulkanicPipelineCache pipelineCache) {
+    public @NotNull VulkanicComputePipeline createComputePipeline(@NotNull VulkanicComputePipelineCreateInfo createInfo, @Nullable VulkanicPipelineCache pipelineCache) throws VulkanException {
         createInfo.validate(features);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -610,7 +612,7 @@ public class VulkanicDevice implements AutoCloseable {
     public @NotNull VulkanicGraphicsPipeline createGraphicsPipeline(
             @NotNull VulkanicGraphicsPipelineCreateInfo createInfo,
             @Nullable VulkanicPipelineCache pipelineCache
-    ) {
+    ) throws VulkanException {
         createInfo.validate(features);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -696,7 +698,7 @@ public class VulkanicDevice implements AutoCloseable {
         KHRSwapchain.vkDestroySwapchainKHR(this.handle, swapchain.handle(), null);
     }
 
-    public @NotNull VulkanicSampler createSampler(VulkanicSamplerCreateInfo createInfo) {
+    public @NotNull VulkanicSampler createSampler(VulkanicSamplerCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSamplerCreateInfo samplerCreateInfo = VkSamplerCreateInfo.calloc(stack)
                     .sType$Default()
@@ -712,7 +714,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .unnormalizedCoordinates(createInfo.unnormalizedCoordinates());
 
             LongBuffer pSampler = stack.callocLong(1);
-            VK10.vkCreateSampler(this.handle, samplerCreateInfo, null, pSampler);
+            VkUtil.check(VK10.vkCreateSampler(this.handle, samplerCreateInfo, null, pSampler));
             return new VulkanicSampler(this, pSampler.get(0));
         }
     }
@@ -721,7 +723,7 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroySampler(this.handle, sampler.handle(), null);
     }
 
-    public @NotNull VulkanicQueryPool createQueryPool(EnumIntBitset<VulkanicQueryPoolCreateFlag> flags, VulkanicQueryType type, int queryCount, EnumIntBitset<VulkanicQueryPipelineStatisticFlag> pipelineStatistics) {
+    public @NotNull VulkanicQueryPool createQueryPool(EnumIntBitset<VulkanicQueryPoolCreateFlag> flags, VulkanicQueryType type, int queryCount, EnumIntBitset<VulkanicQueryPipelineStatisticFlag> pipelineStatistics) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pQueryPool = stack.callocLong(1);
             VkQueryPoolCreateInfo pQueryPoolCreateInfo = VkQueryPoolCreateInfo.calloc(stack)
@@ -731,7 +733,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .queryCount(queryCount)
                     .pipelineStatistics(pipelineStatistics.mask());
 
-            VK10.vkCreateQueryPool(this.handle, pQueryPoolCreateInfo, null, pQueryPool);
+            VkUtil.check(VK10.vkCreateQueryPool(this.handle, pQueryPoolCreateInfo, null, pQueryPool));
             return new VulkanicQueryPool(this, pQueryPool.get(0), queryCount);
         }
     }
@@ -756,6 +758,7 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// @apiNote Tensor resource descriptors are not currently supported
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult writeResourceDescriptors(List<VulkanicResourceDescriptorInfo> resources, List<ByteBuffer> descriptors) {
         if (!features.supportsDescriptorHeap()) {
@@ -770,7 +773,7 @@ public class VulkanicDevice implements AutoCloseable {
                 switch (info.data()) {
                     case VulkanicResourceDescriptorData.Image image -> pData.pImage(VkImageDescriptorInfoEXT.calloc(stack)
                             .sType$Default()
-                            .pView(VkImageViewCreateInfo.calloc()
+                            .pView(VkImageViewCreateInfo.calloc(stack)
                                     .sType$Default()
                                     .viewType(image.view().viewType().qualifier())
                                     .format(image.view().format().qualifier())
@@ -854,7 +857,7 @@ public class VulkanicDevice implements AutoCloseable {
         return VulkanicDeviceSize.ofBytes(EXTDescriptorHeap.vkGetPhysicalDeviceDescriptorSizeEXT(this.physicalDevice.handle(), type.qualifier()));
     }
 
-    public @NotNull VulkanicPipelineCache createPipelineCache(@NotNull EnumIntBitset<VulkanicPipelineCacheCreateFlag> flags, @Nullable ByteBuffer initialData) {
+    public @NotNull VulkanicPipelineCache createPipelineCache(@NotNull EnumIntBitset<VulkanicPipelineCacheCreateFlag> flags, @Nullable ByteBuffer initialData) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPipelineCacheCreateInfo createInfo = VkPipelineCacheCreateInfo.calloc(stack)
                     .sType$Default()
@@ -862,7 +865,7 @@ public class VulkanicDevice implements AutoCloseable {
                     .pInitialData(initialData);
 
             LongBuffer pCache = stack.callocLong(1);
-            VK10.vkCreatePipelineCache(this.handle, createInfo, null, pCache);
+            VkUtil.check(VK10.vkCreatePipelineCache(this.handle, createInfo, null, pCache));
 
             return new VulkanicPipelineCache(this, pCache.get(0));
         }
@@ -878,17 +881,19 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public long getPipelineCacheDataSize(@NotNull VulkanicPipelineCache cache) {
+    public long getPipelineCacheDataSize(@NotNull VulkanicPipelineCache cache) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pDataSize = stack.callocPointer(1);
-            VK10.vkGetPipelineCacheData(this.handle, cache.handle(), pDataSize, null);
+            VkUtil.check(VK10.vkGetPipelineCacheData(this.handle, cache.handle(), pDataSize, null));
             return pDataSize.get(0);
         }
     }
 
+    //
+    @Contract(mutates = "param2", value = "_, _ -> _")
     public @NotNull VulkanicResult getPipelineCacheData(@NotNull VulkanicPipelineCache cache, @NotNull ByteBuffer buffer) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer pDataSize = stack.callocPointer(1);
+            PointerBuffer pDataSize = stack.pointers(buffer.remaining());
             return VulkanicResult.valueOf(VK10.vkGetPipelineCacheData(this.handle, cache.handle(), pDataSize, buffer));
         }
     }
@@ -897,7 +902,7 @@ public class VulkanicDevice implements AutoCloseable {
     public @NotNull VulkanicRayTracingPipeline createRayTracingPipeline(
             @NotNull VulkanicRayTracingPipelineCreateInfo createInfo,
             @Nullable VulkanicPipelineCache cache
-    ) {
+    ) throws VulkanException {
         createInfo.validate(features);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -917,39 +922,59 @@ public class VulkanicDevice implements AutoCloseable {
     ) {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
-        VulkanicCommandBuffer commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
-
-        commandBuffer.begin(EnumIntBitset.of(VulkanicCommandBufferUsageFlag.ONE_TIME_SUBMIT));
-
-        usage.accept(commandBuffer);
-
-        commandBuffer.end();
-
-        VulkanicFence fence = createFence(EnumIntBitset.of());
-        VulkanicResult result = queue.submit(fence, List.of(), List.of(), commandBuffer);
-        if (!result.success()) {
-            future.completeExceptionally(new VulkanException(result));
+        VulkanicCommandBuffer commandBuffer;
+        try {
+            commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
+        } catch (VulkanException e) {
+            future.completeExceptionally(e);
             return future;
         }
-
+        VulkanicFence fence = null;
         try {
+            VulkanicResult result = commandBuffer.begin(EnumIntBitset.of(VulkanicCommandBufferUsageFlag.ONE_TIME_SUBMIT));
+            if (!result.success()) {
+                throw new VulkanException(result);
+            }
+
+            usage.accept(commandBuffer);
+
+            result = commandBuffer.end();
+            if (!result.success()) {
+                throw new VulkanException(result);
+            }
+
+            fence = createFence(EnumIntBitset.of());
+
+            result = queue.submit(fence, List.of(), List.of(), commandBuffer);
+            if (!result.success()) {
+                throw new VulkanException(result);
+            }
+
+            VulkanicFence submittedFence = fence;
+
             Thread.ofVirtual().start(() -> {
                 try {
-                    fence.waitFor(VkUtil.FOREVER);
-
-                    freeCommandBuffer(pool, commandBuffer);
-                    fence.close();
-
+                    submittedFence.waitFor(VkUtil.FOREVER);
                     future.complete(null);
                 } catch (Exception e) {
                     future.completeExceptionally(e);
+                } finally {
+                    commandBuffer.close();
+                    submittedFence.close();
                 }
             });
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-        }
 
-        return future;
+            return future;
+        } catch (Exception e) {
+            commandBuffer.close();
+
+            if (fence != null) {
+                fence.close();
+            }
+
+            future.completeExceptionally(e);
+            return future;
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")

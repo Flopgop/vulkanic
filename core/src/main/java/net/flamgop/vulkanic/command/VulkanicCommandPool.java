@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.core.VulkanicQueueFamily;
+import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,11 +32,11 @@ public class VulkanicCommandPool implements AutoCloseable {
         return device.resetCommandPool(this, flags);
     }
 
-    public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandBufferLevel level) {
+    public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandBufferLevel level) throws VulkanException {
         return device.allocateCommandBuffer(this, level);
     }
 
-    public @NotNull VulkanicCommandBuffer[] allocateCommandBuffers(@NotNull VulkanicCommandBufferLevel level, int count) {
+    public @NotNull VulkanicCommandBuffer[] allocateCommandBuffers(@NotNull VulkanicCommandBufferLevel level, int count) throws VulkanException {
         return device.allocateCommandBuffers(this, level, count);
     }
 
@@ -47,6 +48,7 @@ public class VulkanicCommandPool implements AutoCloseable {
         device.freeCommandBuffers(this, commandBuffers);
     }
 
+    @ApiStatus.Experimental
     public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VkCommandBufferBeginInfo beginInfo) {
         return device.beginCommandBuffer(commandBuffer, beginInfo);
     }

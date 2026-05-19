@@ -1,5 +1,6 @@
 package net.flamgop.vulkanic.memory.image;
 
+import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.MappedMemory;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
 import net.flamgop.vulkanic.memory.VulkanicFormat;
@@ -111,7 +112,7 @@ public class VulkanicImage implements AutoCloseable {
         this.usage = usage;
     }
 
-    public @NotNull MappedMemory map() {
+    public @NotNull MappedMemory map() throws VulkanException {
         if (special) throw new UnsupportedOperationException("Cannot map special images (no associated memory)");
         return this.allocator.mapMemory(this.allocation);
     }

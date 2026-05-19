@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/annotations" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/helpers" />
+            <option value="$PROJECT_DIR$/helpers/debug" />
             <option value="$PROJECT_DIR$/helpers/glfw" />
             <option value="$PROJECT_DIR$/helpers/sdl" />
             <option value="$PROJECT_DIR$/processor" />

@@ -1,14 +1,12 @@
 package net.flamgop.vulkanic.memory;
 
+import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.image.*;
-import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
-import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.core.VulkanicInstance;
 import net.flamgop.vulkanic.core.VulkanicPhysicalDevice;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3i;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.*;
@@ -24,7 +22,7 @@ public class VulkanicAllocator implements AutoCloseable {
 
     private final boolean supportsBufferDeviceAddress;
 
-    public VulkanicAllocator(@NotNull VulkanicInstance instance, @NotNull VulkanicPhysicalDevice physicalDevice, @NotNull VulkanicDevice device) {
+    public VulkanicAllocator(@NotNull VulkanicInstance instance, @NotNull VulkanicPhysicalDevice physicalDevice, @NotNull VulkanicDevice device) throws VulkanException {
         this.device = device;
         supportsBufferDeviceAddress = this.device.features().supportsBufferDeviceAddress();
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -36,8 +34,8 @@ public class VulkanicAllocator implements AutoCloseable {
                     .physicalDevice(physicalDevice.handle())
                     .device(device.handle())
                     .pVulkanFunctions(functions)
-                    .vulkanApiVersion(instance.applicationInfo().apiVersion().version())
-                    .flags(Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT);
+                    .vulkanApiVersion(instance.applicationInfo().apiVersion().version());
+            if (supportsBufferDeviceAddress) createInfo.flags(Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT);
 
             PointerBuffer pAllocator = stack.callocPointer(1);
             VkUtil.check(Vma.vmaCreateAllocator(createInfo, pAllocator));
@@ -76,7 +74,7 @@ public class VulkanicAllocator implements AutoCloseable {
         Vma.vmaFreeMemory(this.handle, allocation);
     }
 
-    public MappedMemory mapMemory(long allocation) {
+    public MappedMemory mapMemory(long allocation) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer ppData = stack.callocPointer(1);
             VkUtil.check(Vma.vmaMapMemory(this.handle, allocation, ppData));
@@ -93,18 +91,13 @@ public class VulkanicAllocator implements AutoCloseable {
     public @NotNull VulkanicBuffer createBuffer(
             @NotNull VulkanicBufferCreateInfo bufferCreateInfo,
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo
-    ) {
+    ) throws VulkanException {
         if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.DESCRIPTOR_HEAP_EXT) && !this.device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("Cannot create a descriptor heap without the descriptor heap feature enabled.");
+        if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS) && !this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer with usage SHADER_DEVICE_ADDRESS because this allocator does not support buffer device address.");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pBuffer = stack.callocLong(1);
             PointerBuffer pAllocation = stack.callocPointer(1);
             VmaAllocationInfo pAllocationInfo = VmaAllocationInfo.calloc(stack);
-
-            if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS)) {
-                if (!this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer with usage SHADER_DEVICE_ADDRESS because this allocator does not support buffer device address.");
-            } else {
-                if (this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer without usage SHADER_DEVICE_ADDRESS because this allocator requires buffer device address.");
-            }
 
             VkBufferCreateInfo pBufferCreateInfo = VkBufferCreateInfo.calloc(stack)
                     .sType$Default()
@@ -122,7 +115,7 @@ public class VulkanicAllocator implements AutoCloseable {
                     .memoryTypeBits(allocationCreateInfo.memoryTypeBits());
 
             VkUtil.check(Vma.vmaCreateBuffer(this.handle, pBufferCreateInfo, pAllocationCreateInfo, pBuffer, pAllocation, pAllocationInfo));
-            return new VulkanicBuffer(this, pBuffer.get(0), pAllocation.get(0), pAllocationInfo);
+            return new VulkanicBuffer(this, pBuffer.get(0), pAllocation.get(0), pAllocationInfo, bufferCreateInfo, allocationCreateInfo);
         }
     }
 
@@ -132,7 +125,7 @@ public class VulkanicAllocator implements AutoCloseable {
 
     public @NotNull VulkanicImage createImage(
             @NotNull VulkanicImageCreateInfo imageCreateInfo,
-            @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
+            @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) throws VulkanException {
         if (imageCreateInfo.extent().x <= 0 || imageCreateInfo.extent().y <= 0 || imageCreateInfo.extent().z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
         try (MemoryStack stack = MemoryStack.stackPush()) {
 

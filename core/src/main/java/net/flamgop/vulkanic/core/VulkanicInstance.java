@@ -4,6 +4,7 @@ import net.flamgop.vulkanic.core.debug.VulkanicDebugCallbackData;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugLabel;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugMessenger;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
+import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
@@ -36,7 +37,7 @@ public class VulkanicInstance implements AutoCloseable {
     /// @param layers A collection of Vulkan Validation Layers to apply to this instance. Will fail if any are not present.
     /// @param extensions A collection of Vulkan extensions to apply to this instance. Will fail if any are not supported.
     /// @param debugMessenger A [VulkanicDebugMessenger], or `null`. Note: If a [VulkanicDebugMessenger] is provided and `extensions` does not contain `VK_EXT_debug_utils` this will fail by default.
-    public VulkanicInstance(@NotNull VulkanicApplicationInfo applicationInfo, @NotNull Collection<String> layers, @NotNull Collection<String> extensions, @Nullable VulkanicDebugMessenger debugMessenger) {
+    public VulkanicInstance(@NotNull VulkanicApplicationInfo applicationInfo, @NotNull Collection<String> layers, @NotNull Collection<String> extensions, @Nullable VulkanicDebugMessenger debugMessenger) throws VulkanException {
         this.applicationInfo = applicationInfo;
         try (MemoryStack stack = MemoryStack.stackPush()) {
 

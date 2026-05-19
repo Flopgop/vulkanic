@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.util.EnumIntBitset;
@@ -163,7 +164,7 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
     }
 
     @Override
-    public @NotNull VulkanicGraphicsPipeline build(@Nullable VulkanicPipelineCache pipelineCache) {
+    public @NotNull VulkanicGraphicsPipeline build(@Nullable VulkanicPipelineCache pipelineCache) throws VulkanException {
         if (viewportState != null && rasterizationState == null) throw new IllegalStateException("Viewport state is co-dependent on rasterization state!");
         if (shaderStages.isEmpty() || !ShaderUtil.containsPrimitiveStage(shaderStages)) throw new IllegalStateException("A graphics pipeline requires at least one primitive-producing shader stage. (i.e. VERTEX or MESH_EXT)");
         if (ShaderUtil.containsMultiplePrimitiveStages(shaderStages)) throw new IllegalStateException("A graphics pipeline may not contain more than one primitive-producing shader stage. (i.e. VERTEX or MESH_EXT)");
