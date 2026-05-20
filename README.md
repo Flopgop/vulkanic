@@ -12,7 +12,7 @@
 Silly little Vulkan abstraction based on [LWJGL 3](https://github.com/LWJGL/lwjgl3). <br>
 because Vulkan is really annoying sometimes.
 
-This library is usable, but very 
+This library is usable, but is probably filled with mysterious bugs noone's ever heard of, here be dragons.
 
 ### Current Features:
 - Most of core Vulkan up to 1.4
