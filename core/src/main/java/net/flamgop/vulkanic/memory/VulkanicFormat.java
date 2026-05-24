@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.memory;
 
-/// note: yes, this doesn't reference the vulkan constants directly, however to do that I would need to manually go through every single format listed here and type their specific reference.
+/// note: yes, this doesn't reference the vulkan constants directly, however, to do that I would need to manually go through every single format listed here and type their specific reference.
 /// so basically, this is the exception.
 public enum VulkanicFormat {
     UNDEFINED(0),

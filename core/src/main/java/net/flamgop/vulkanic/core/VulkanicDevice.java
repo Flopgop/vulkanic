@@ -170,8 +170,9 @@ public class VulkanicDevice implements AutoCloseable {
 
     /// @apiNote index refers to the actual queue family index as determined during queue family enumeration (i.e., at device creation time)
     /// @param index the queue family index of the queue family
-    /// @return the VulkanicQueueFamily for the queue family index, or null if that index was not passed as a VulkanicQueueInfo to this device's constructor
-    public @Nullable VulkanicQueueFamily queueFamily(int index) {
+    /// @return the VulkanicQueueFamily for the queue family index, or null if that index was not passed as a VulkanicQueueInfo to this device's constructor,
+    /// this isn't marked as nullable because you can assume that if device creation succeeds, the queue at the specified index does exist.
+    public VulkanicQueueFamily queueFamily(int index) {
         return queueFamilies.get(index);
     }
 
@@ -272,8 +273,8 @@ public class VulkanicDevice implements AutoCloseable {
         VK11.vkDestroyCommandPool(this.handle, commandPool.handle(), null);
     }
 
-    public int resetCommandPool(@NotNull VulkanicCommandPool commandPool, int flags) {
-        return VK11.vkResetCommandPool(this.handle, commandPool.handle(), flags);
+    public int resetCommandPool(@NotNull VulkanicCommandPool commandPool, @NotNull EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
+        return VK11.vkResetCommandPool(this.handle, commandPool.handle(), flags.mask());
     }
 
     public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level) throws VulkanException {
@@ -327,8 +328,8 @@ public class VulkanicDevice implements AutoCloseable {
         return VulkanicResult.valueOf(VK11.vkEndCommandBuffer(commandBuffer.handle()));
     }
 
-    public @NotNull VulkanicResult resetCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, int flags) {
-        return VulkanicResult.valueOf(VK11.vkResetCommandBuffer(commandBuffer.handle(), flags));
+    public @NotNull VulkanicResult resetCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull EnumIntBitset<VulkanicCommandBufferResetFlag> flags) {
+        return VulkanicResult.valueOf(VK11.vkResetCommandBuffer(commandBuffer.handle(), flags.mask()));
     }
 
     public @NotNull VulkanicImageView createImageView(@NotNull VulkanicImage image, @NotNull VulkanicImageViewCreateInfo imageViewCreateInfo) throws VulkanException {

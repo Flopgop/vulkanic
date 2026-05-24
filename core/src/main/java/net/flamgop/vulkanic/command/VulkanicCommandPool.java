@@ -28,7 +28,7 @@ public class VulkanicCommandPool implements AutoCloseable {
         return device;
     }
 
-    public int reset(int flags) {
+    public int reset(EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
         return device.resetCommandPool(this, flags);
     }
 
@@ -53,7 +53,7 @@ public class VulkanicCommandPool implements AutoCloseable {
         return device.beginCommandBuffer(commandBuffer, beginInfo);
     }
 
-    public @NotNull VulkanicResult resetCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, int flags) {
+    public @NotNull VulkanicResult resetCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull EnumIntBitset<VulkanicCommandBufferResetFlag> flags) {
         return device.resetCommandBuffer(commandBuffer, flags);
     }
 

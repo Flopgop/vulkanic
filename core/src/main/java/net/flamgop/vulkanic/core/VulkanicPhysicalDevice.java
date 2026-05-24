@@ -20,6 +20,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,18 +80,26 @@ public class VulkanicPhysicalDevice {
         }
     }
 
-    public @NotNull List<VulkanicPresentMode> surfacePresentModes(@NotNull VulkanicSurface surface) {
+    public @NotNull Set<VulkanicPresentMode> surfacePresentModes(@NotNull VulkanicSurface surface) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pCount = stack.callocInt(1);
             KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.handle, surface.handle(), pCount, null);
             IntBuffer pPresentModes = stack.callocInt(pCount.get(0));
             KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.handle, surface.handle(), pCount, pPresentModes);
 
-            List<VulkanicPresentMode> presentModes = new ArrayList<>();
+            Set<VulkanicPresentMode> presentModes = new HashSet<>();
             for (int i = 0; i < pCount.get(0); i++) {
                 presentModes.add(VulkanicPresentMode.valueOf(pPresentModes.get(i)));
             }
             return presentModes;
+        }
+    }
+
+    public boolean surfaceSupport(int queueFamilyIndex, @NotNull VulkanicSurface surface) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer pSupported = stack.callocInt(1);
+            KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.handle, queueFamilyIndex, surface.handle(), pSupported);
+            return pSupported.get(0) == VK_TRUE;
         }
     }
 

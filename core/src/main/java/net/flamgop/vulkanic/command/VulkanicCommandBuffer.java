@@ -68,7 +68,7 @@ public class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicResult reset(int flags) {
+    public @NotNull VulkanicResult reset(@NotNull EnumIntBitset<VulkanicCommandBufferResetFlag> flags) {
         return pool.resetCommandBuffer(this, flags);
     }
 
