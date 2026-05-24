@@ -9,8 +9,8 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import java.util.List;
 
 public record VulkanicVertexInputState(
-        List<VulkanicInputAttributeDescription> attributes,
-        List<VulkanicInputBindingDescription> bindings
+        List<VulkanicInputBindingDescription> bindings,
+        List<VulkanicInputAttributeDescription> attributes
 ) {
     public @NotNull VkPipelineVertexInputStateCreateInfo build(@NotNull MemoryStack stack) {
         VkVertexInputAttributeDescription.Buffer attributes = VkVertexInputAttributeDescription.calloc(this.attributes.size(), stack);

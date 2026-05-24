@@ -15,6 +15,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -24,6 +25,7 @@ public class VulkanicInstance implements AutoCloseable {
     private final @Unmodifiable @NotNull List<String> enabledLayers;
     private final @Unmodifiable @NotNull List<String> enabledExtensions;
     private final VkInstance handle;
+    private final long debugMessenger;
 
     @ApiStatus.Internal
     public VulkanicInstance(@NotNull VkInstance handle, @NotNull VulkanicApplicationInfo applicationInfo, @NotNull List<String> enabledLayers, @NotNull List<String> enabledExtensions) {
@@ -31,6 +33,7 @@ public class VulkanicInstance implements AutoCloseable {
         this.applicationInfo = applicationInfo;
         this.enabledLayers = List.copyOf(enabledLayers);
         this.enabledExtensions = List.copyOf(enabledExtensions);
+        this.debugMessenger = 0;
     }
 
     /// @param applicationInfo A [VulkanicApplicationInfo] object describing the name, version, and required Vulkan version for this app and engine
@@ -133,6 +136,13 @@ public class VulkanicInstance implements AutoCloseable {
 
             VkUtil.check(VK10.vkCreateInstance(createInfo, null, ret));
             this.handle = new VkInstance(ret.get(0), createInfo);
+
+            if (debugMessenger != null) {
+                LongBuffer pMessenger = stack.callocLong(1);
+                VkDebugUtilsMessengerCreateInfoEXT debugInfo = VkDebugUtilsMessengerCreateInfoEXT.create(createInfo.pNext());
+                EXTDebugUtils.vkCreateDebugUtilsMessengerEXT(handle, debugInfo, null, pMessenger);
+                this.debugMessenger = pMessenger.get(0);
+            } else this.debugMessenger = 0;
         }
     }
 
@@ -178,6 +188,7 @@ public class VulkanicInstance implements AutoCloseable {
 
     @Override
     public void close() {
+        if (debugMessenger != 0) EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(handle, debugMessenger, null);
         VK10.vkDestroyInstance(handle, null);
     }
 }

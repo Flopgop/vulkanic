@@ -21,7 +21,7 @@ public class VulkanicQueueFamily {
         this.index = index;
         this.queues = new ArrayList<>(queueCount);
         for (int i = 0; i < queueCount; i++) {
-            queues.add(device.queue(index, i));
+            queues.add(device.queue(this, i));
         }
         this.queueCount = queueCount;
     }

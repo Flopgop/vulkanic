@@ -15,7 +15,7 @@ import org.lwjgl.vulkan.*;
 
 import java.util.List;
 
-public record VulkanicQueue(int family, @NotNull VkQueue handle) {
+public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueue handle) {
 
     /// @see VulkanicQueueFamily#queue
     /// @see VulkanicDevice#queue

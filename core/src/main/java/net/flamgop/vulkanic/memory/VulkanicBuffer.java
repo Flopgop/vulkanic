@@ -62,6 +62,10 @@ public class VulkanicBuffer implements AutoCloseable {
         return this.allocator.mapMemory(this.allocation);
     }
 
+    public void flush() {
+        this.allocator.flushAllocation(this.allocation);
+    }
+
     public int memoryType() {
         return this.memoryType;
     }

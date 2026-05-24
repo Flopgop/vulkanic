@@ -177,11 +177,11 @@ public class VulkanicDevice implements AutoCloseable {
     }
 
     @ApiStatus.Internal
-    protected @NotNull VulkanicQueue queue(int queueFamilyIndex, int queueIndex) {
+    protected @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pQueue = stack.callocPointer(1);
-            VK11.vkGetDeviceQueue(this.handle, queueFamilyIndex, queueIndex, pQueue);
-            return new VulkanicQueue(queueFamilyIndex, new VkQueue(pQueue.get(0), this.handle));
+            VK11.vkGetDeviceQueue(this.handle, queueFamily.index(), queueIndex, pQueue);
+            return new VulkanicQueue(queueFamily, new VkQueue(pQueue.get(0), this.handle));
         }
     }
 
@@ -794,7 +794,9 @@ public class VulkanicDevice implements AutoCloseable {
                             .address$(deviceAddressRange.address())
                             .size(deviceAddressRange.size().bytes())
                     );
-                    case VulkanicResourceDescriptorData.TensorViewCreateInfo _ -> pData.pTensorARM(VkTensorViewCreateInfoARM.calloc(stack).sType$Default()); // TODO
+                    case VulkanicResourceDescriptorData.TensorViewCreateInfo _ ->
+                        throw new UnsupportedOperationException("VulkanicResourceDescriptorData#TensorViewCreateInfo is not currently supported");
+                    // TODO: determine whether this is worth it to implement?
                 }
 
                 pResources.get(i)
@@ -919,6 +921,7 @@ public class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// @apiNote this leaves a garbage command buffer in the pool that must be closed by the user!
     public @NotNull CompletableFuture<Void> submitTransient(
             @NotNull VulkanicCommandPool pool,
             @NotNull VulkanicQueue queue,
@@ -926,15 +929,10 @@ public class VulkanicDevice implements AutoCloseable {
     ) {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
-        VulkanicCommandBuffer commandBuffer;
-        try {
-            commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
-        } catch (VulkanException e) {
-            future.completeExceptionally(e);
-            return future;
-        }
+        VulkanicCommandBuffer commandBuffer = null;
         VulkanicFence fence = null;
         try {
+            commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
             VulkanicResult result = commandBuffer.begin(EnumIntBitset.of(VulkanicCommandBufferUsageFlag.ONE_TIME_SUBMIT));
             if (!result.success()) {
                 throw new VulkanException(result);
@@ -954,31 +952,31 @@ public class VulkanicDevice implements AutoCloseable {
                 throw new VulkanException(result);
             }
 
-            VulkanicFence submittedFence = fence;
-
+            final VulkanicFence submittedFence = fence;
             Thread.ofVirtual().start(() -> {
                 try {
                     submittedFence.waitFor(VkUtil.FOREVER);
                     future.complete(null);
                 } catch (Exception e) {
                     future.completeExceptionally(e);
-                } finally {
-                    commandBuffer.close();
-                    submittedFence.close();
                 }
             });
 
-            return future;
+            return future.whenComplete((_, _) -> {
+                submittedFence.close();
+            });
         } catch (Exception e) {
-            commandBuffer.close();
-
-            if (fence != null) {
-                fence.close();
-            }
+            if (commandBuffer != null) commandBuffer.close();
+            if (fence != null) fence.close();
 
             future.completeExceptionally(e);
             return future;
         }
+    }
+
+    public @NotNull CompletableFuture<Void> submitTransient(@NotNull VulkanicQueue queue, @NotNull Consumer<VulkanicCommandBuffer> usage) throws VulkanException {
+        VulkanicCommandPool pool = createCommandPool(EnumIntBitset.of(VulkanicCommandPoolCreateFlag.TRANSIENT), queue.family());
+        return submitTransient(pool, queue, usage).whenComplete((_,_) -> pool.close());
     }
 
     @SuppressWarnings("UnusedReturnValue")
