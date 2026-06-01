@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public class VulkanicDevice implements AutoCloseable {
 
     private final VulkanicInstance instance;
@@ -646,6 +647,7 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyPipeline(handle, pipeline.handle(), null);
     }
 
+    @SuppressWarnings("resource")
     public @NotNull VulkanicSwapchain createSwapchain(
             @NotNull VulkanicSwapchainCreateInfo createInfo
     ) throws VulkanException {

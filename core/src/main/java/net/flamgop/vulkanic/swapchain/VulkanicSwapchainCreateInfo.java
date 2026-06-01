@@ -21,4 +21,11 @@ public record VulkanicSwapchainCreateInfo(
         @NotNull VulkanicPresentMode presentMode, boolean clipped,
         @Nullable VulkanicSwapchain oldSwapchain
 ) {
+    public VulkanicSwapchainCreateInfo forSwapchain(VulkanicSwapchain oldSwapchain) {
+        return new VulkanicSwapchainCreateInfo(
+                flags, surface, minImageCount, imageFormat, imageColorSpace, extent, imageArrayLayers,
+                imageUsage, imageSharingMode, queueFamilyIndices, preTransform, compositeAlpha, presentMode, clipped,
+                oldSwapchain
+        );
+    }
 }
