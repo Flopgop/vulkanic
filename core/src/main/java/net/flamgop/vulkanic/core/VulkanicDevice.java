@@ -607,7 +607,7 @@ public class VulkanicDevice implements AutoCloseable {
             pCreateInfos.flip();
 
             VkUtil.check(VK10.vkCreateComputePipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfos, null, pPipeline));
-            return new VulkanicComputePipeline(this, pPipeline.get(0));
+            return new VulkanicComputePipeline(this, pPipeline.get(0), createInfo);
         }
     }
 
@@ -625,7 +625,7 @@ public class VulkanicDevice implements AutoCloseable {
 
             VkUtil.check(VK10.vkCreateGraphicsPipelines(handle, pipelineCache != null ? pipelineCache.handle() : VK10.VK_NULL_HANDLE, pCreateInfos, null, pPipeline));
 
-            return new VulkanicGraphicsPipeline(this, pPipeline.get(0));
+            return new VulkanicGraphicsPipeline(this, pPipeline.get(0), createInfo);
         }
     }
 
@@ -917,7 +917,7 @@ public class VulkanicDevice implements AutoCloseable {
             pCreateInfos.flip();
 
             VkUtil.check(KHRRayTracingPipeline.vkCreateRayTracingPipelinesKHR(this.handle, 0, cache != null ? cache.handle() : 0, pCreateInfos, null, pOut));
-            return new VulkanicRayTracingPipeline(this, pOut.get(0));
+            return new VulkanicRayTracingPipeline(this, pOut.get(0), createInfo);
         }
     }
 

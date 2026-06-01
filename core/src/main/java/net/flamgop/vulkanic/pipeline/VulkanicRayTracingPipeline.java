@@ -9,17 +9,24 @@ public final class VulkanicRayTracingPipeline implements VulkanicPipeline {
     private final VulkanicDevice device;
     private final long handle;
 
+    private final VulkanicRayTracingPipelineCreateInfo createInfo;
+
     /// @see VulkanicDevice#createRayTracingPipeline
     @ApiStatus.Internal
-    public VulkanicRayTracingPipeline(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicRayTracingPipeline(@NotNull VulkanicDevice device, long handle, @NotNull VulkanicRayTracingPipelineCreateInfo createInfo) {
         this.device = device;
         this.handle = handle;
+        this.createInfo = createInfo;
     }
 
     @ApiStatus.Internal
     @Contract(pure = true)
     public long handle() {
         return handle;
+    }
+
+    public @NotNull VulkanicRayTracingPipelineCreateInfo createInfo() {
+        return createInfo;
     }
 
     @Override

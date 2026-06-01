@@ -3,6 +3,9 @@ package net.flamgop.vulkanic.util;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) implements Bitset<Long> {
 
     public EnumLongBitset(@NotNull T[] constants) {
@@ -15,6 +18,10 @@ public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) i
 
     @ApiStatus.Internal
     public EnumLongBitset {}
+
+    public static <T extends Enum<T> & Bitmaskable<Long>> EnumLongBitset<T> empty() {
+        return new EnumLongBitset<>(0L);
+    }
 
     @SafeVarargs
     public static <T extends Enum<T> & Bitmaskable<Long>> EnumLongBitset<T> of(T... elements) {
@@ -31,6 +38,18 @@ public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) i
 
     public boolean containsAll(@NotNull EnumLongBitset<T> other) {
         return (this.mask & other.mask()) == other.mask();
+    }
+
+    public void require(@NotNull T constant) {
+        if (!contains(constant)) {
+            throw new IllegalStateException("EnumIntBitset does not contain " + constant);
+        }
+    }
+
+    public void requireAll(@NotNull EnumLongBitset<T> other) {
+        if (!containsAll(other)) {
+            throw new IllegalStateException("EnumIntBitset does not contain all " + other);
+        }
     }
 
     public EnumLongBitset<T> union(@NotNull EnumLongBitset<T> other) {
@@ -51,6 +70,13 @@ public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) i
 
     public boolean some() {
         return mask != 0;
+    }
+
+    public @NotNull String toFriendlyString(Class<T> clazz) {
+        return Stream.of(clazz.getEnumConstants())
+                .filter(this::contains)
+                .map(Enum::name)
+                .collect(Collectors.joining("|"));
     }
 
     @Override

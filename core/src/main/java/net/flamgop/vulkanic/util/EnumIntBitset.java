@@ -40,6 +40,18 @@ public record EnumIntBitset<T extends Enum<T> & Bitmaskable<Integer>>(Integer ma
         return (this.mask & other.mask()) == other.mask();
     }
 
+    public void require(@NotNull T constant) {
+        if (!contains(constant)) {
+            throw new IllegalStateException("EnumIntBitset does not contain " + constant);
+        }
+    }
+
+    public void requireAll(@NotNull EnumIntBitset<T> other) {
+        if (!containsAll(other)) {
+            throw new IllegalStateException("EnumIntBitset does not contain all " + other);
+        }
+    }
+
     public EnumIntBitset<T> union(@NotNull EnumIntBitset<T> other) {
         return new EnumIntBitset<>(this.mask | other.mask());
     }
