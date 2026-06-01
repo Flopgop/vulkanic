@@ -8,6 +8,6 @@ public record VulkanicBufferCreateInfo(
         @NotNull VulkanicDeviceSize size,
         @NotNull EnumIntBitset<VulkanicBufferUsageFlag> usage,
         @NotNull VulkanicSharingMode sharingMode,
-        int queueFamilyIndexCount, int... queueFamilyIndices
+        int... queueFamilyIndices
 ) {
 }

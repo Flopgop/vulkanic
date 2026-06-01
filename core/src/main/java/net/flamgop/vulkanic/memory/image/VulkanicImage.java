@@ -66,16 +66,13 @@ public class VulkanicImage implements AutoCloseable {
     private final long offset;
     private final long size;
 
-    private final boolean special;
+    private final boolean externallyAllocated;
 
-    private final VulkanicFormat format;
-    private final Vector3ic extent;
-    private final int mipLevels;
-    private final EnumIntBitset<VulkanicImageUsageFlag> usage;
+    private final VulkanicImageCreateInfo createInfo;
 
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, VmaAllocationInfo allocationInfo, VulkanicImageCreateInfo createInfo) {
+    public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicImageCreateInfo createInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
@@ -85,52 +82,52 @@ public class VulkanicImage implements AutoCloseable {
         this.deviceMemory = allocationInfo.deviceMemory();
         this.offset = allocationInfo.offset();
         this.size = allocationInfo.size();
-        this.format = createInfo.format();
-        this.extent = createInfo.extent();
-        this.mipLevels = createInfo.mipLevels();
-        this.usage = createInfo.usage();
 
-        this.special = false;
+        this.createInfo = createInfo;
+
+        this.externallyAllocated = false;
     }
 
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(long handle, @NotNull VulkanicFormat format, @NotNull Vector3ic extent, int mipLevels, @NotNull EnumIntBitset<VulkanicImageUsageFlag> usage) {
+    public VulkanicImage(long handle, @NotNull VulkanicImageCreateInfo createInfo) {
         this.allocator = null;
         this.handle = handle;
-        this.aspectMask = new EnumIntBitset<>(computeAspectMask(format));
+        this.aspectMask = new EnumIntBitset<>(computeAspectMask(createInfo.format()));
         this.allocation = 0;
         this.memoryType = 0;
         this.deviceMemory = 0;
         this.offset = 0;
         this.size = 0;
-        this.special = true;
+        this.externallyAllocated = true;
 
-        this.format = format;
-        this.extent = extent;
-        this.mipLevels = mipLevels;
-        this.usage = usage;
+        this.createInfo = createInfo;
     }
 
     public @NotNull MappedMemory map() throws VulkanException {
-        if (special) throw new UnsupportedOperationException("Cannot map special images (no associated memory)");
+        if (externallyAllocated) throw new UnsupportedOperationException("Cannot map externally allocated images (no knowledge of associated memory)");
         return this.allocator.mapMemory(this.allocation);
     }
 
+    @Contract(pure = true)
+    public @NotNull VulkanicImageCreateInfo createInfo() {
+        return createInfo;
+    }
+
     public @NotNull VulkanicFormat format() {
-        return format;
+        return createInfo.format();
     }
 
     public @NotNull Vector3ic extent() {
-        return extent;
+        return createInfo.extent();
     }
 
     public int mipLevels() {
-        return mipLevels;
+        return createInfo.mipLevels();
     }
 
     public EnumIntBitset<VulkanicImageUsageFlag> usage() {
-        return usage;
+        return createInfo.usage();
     }
 
     public EnumIntBitset<VulkanicImageAspectFlag> aspectMask() {
@@ -167,7 +164,7 @@ public class VulkanicImage implements AutoCloseable {
 
     @Override
     public void close() {
-        if (special) return; // not valid
+        if (externallyAllocated) return; // not valid
         this.allocator.destroyImage(this);
     }
 }

@@ -41,11 +41,13 @@ public class VulkanicBuffer implements AutoCloseable {
         else deviceAddress = -1;
     }
 
-    public VulkanicBufferCreateInfo createInfo() {
+    @Contract(pure = true)
+    public @NotNull VulkanicBufferCreateInfo createInfo() {
         return bufferCreateInfo;
     }
 
-    public VulkanicAllocationCreateInfo allocationCreateInfo() {
+    @Contract(pure = true)
+    public @NotNull VulkanicAllocationCreateInfo allocationCreateInfo() {
         return allocationCreateInfo;
     }
 

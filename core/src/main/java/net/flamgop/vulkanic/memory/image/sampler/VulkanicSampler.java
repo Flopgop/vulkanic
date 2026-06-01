@@ -11,13 +11,20 @@ import org.jetbrains.annotations.NotNull;
 public class VulkanicSampler implements AutoCloseable {
 
     private final VulkanicDevice device;
+    private final VulkanicSamplerCreateInfo createInfo;
     private final long handle;
 
     /// @see VulkanicDevice#createSampler
     @ApiStatus.Internal
-    public VulkanicSampler(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicSampler(@NotNull VulkanicDevice device, @NotNull VulkanicSamplerCreateInfo createInfo, long handle) {
         this.device = device;
+        this.createInfo = createInfo;
         this.handle = handle;
+    }
+
+    @Contract(pure = true)
+    public @NotNull VulkanicSamplerCreateInfo createInfo() {
+        return createInfo;
     }
 
     @ApiStatus.Internal

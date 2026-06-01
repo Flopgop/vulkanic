@@ -104,7 +104,7 @@ public class VulkanicAllocator implements AutoCloseable {
                     .size(bufferCreateInfo.size().bytes())
                     .usage(bufferCreateInfo.usage().mask())
                     .sharingMode(bufferCreateInfo.sharingMode().qualifier())
-                    .queueFamilyIndexCount(bufferCreateInfo.queueFamilyIndexCount())
+                    .queueFamilyIndexCount(bufferCreateInfo.queueFamilyIndices().length)
                     .pQueueFamilyIndices(stack.ints(bufferCreateInfo.queueFamilyIndices()));
 
             VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)

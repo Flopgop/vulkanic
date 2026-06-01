@@ -11,17 +11,28 @@ import java.util.List;
 public class VulkanicDescriptorPool implements AutoCloseable {
 
     private final VulkanicDevice device;
+    private final VulkanicDescriptorPoolCreateInfo createInfo;
     private final long handle;
 
     /// @see VulkanicDevice#createDescriptorPool
     @ApiStatus.Internal
-    public VulkanicDescriptorPool(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicDescriptorPool(@NotNull VulkanicDevice device, @NotNull VulkanicDescriptorPoolCreateInfo createInfo, long handle) {
         this.device = device;
+        this.createInfo = createInfo;
         this.handle = handle;
+    }
+
+    @Contract(pure = true)
+    public @NotNull VulkanicDescriptorPoolCreateInfo createInfo() {
+        return createInfo;
     }
 
     public @NotNull VulkanicDescriptorSet[] allocate(List<VulkanicDescriptorSetLayout> layouts) throws VulkanException {
         return device.allocateDescriptorSets(this, layouts);
+    }
+
+    public void free(@NotNull VulkanicDescriptorSet... descriptorSets) {
+        device.freeDescriptorSets(this, descriptorSets);
     }
 
     @ApiStatus.Internal

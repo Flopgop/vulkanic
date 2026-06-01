@@ -10,5 +10,5 @@ public record VulkanicImageViewCreateInfo(
         @NotNull VulkanicFormat format,
         @NotNull VulkanicComponentMapping componentMapping,
         @NotNull VulkanicImageSubresourceRange subresourceRange
-        ) {
+) {
 }

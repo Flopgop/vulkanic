@@ -9,12 +9,14 @@ import java.util.List;
 
 public class VulkanicDescriptorSet implements AutoCloseable {
     private final VulkanicDevice device;
+    private final VulkanicDescriptorPool pool;
     private final long handle;
 
     /// @see VulkanicDescriptorPool#allocate 
     @ApiStatus.Internal
-    public VulkanicDescriptorSet(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicDescriptorSet(@NotNull VulkanicDevice device, @NotNull VulkanicDescriptorPool pool, long handle) {
         this.device = device;
+        this.pool = pool;
         this.handle = handle;
     }
 
@@ -26,6 +28,6 @@ public class VulkanicDescriptorSet implements AutoCloseable {
 
     @Override
     public void close() {
-        // TODO: figure out a good way to destroy this
+        if (pool.createInfo().flags().contains(VulkanicDescriptorPoolCreateFlag.FREE_DESCRIPTOR_SET)) device.freeDescriptorSets(pool, this);
     }
 }
