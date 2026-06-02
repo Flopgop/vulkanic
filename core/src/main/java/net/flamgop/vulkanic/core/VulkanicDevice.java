@@ -556,6 +556,10 @@ public class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyDescriptorPool(handle, descriptorPool.handle(), null);
     }
 
+    public void resetDescriptorPool(@NotNull VulkanicDescriptorPool pool, @NotNull EnumIntBitset<VulkanicDescriptorPoolResetFlag> flags) throws VulkanException {
+        VkUtil.check(VK10.vkResetDescriptorPool(this.handle, pool.handle(), flags.mask()));
+    }
+
     public @NotNull VulkanicDescriptorSet[] allocateDescriptorSets(@NotNull VulkanicDescriptorPool pool, @NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pSetLayouts = stack.callocLong(setLayouts.size());

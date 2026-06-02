@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.pipeline.descriptor;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
+import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +34,10 @@ public class VulkanicDescriptorPool implements AutoCloseable {
 
     public void free(@NotNull VulkanicDescriptorSet... descriptorSets) {
         device.freeDescriptorSets(this, descriptorSets);
+    }
+
+    public void reset(@NotNull EnumIntBitset<VulkanicDescriptorPoolResetFlag> flags) throws VulkanException {
+        device.resetDescriptorPool(this, flags);
     }
 
     @ApiStatus.Internal
