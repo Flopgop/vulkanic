@@ -2,7 +2,6 @@ package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanicResult;
-import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +21,7 @@ public final class VulkanicFence implements AutoCloseable {
         this.handle = handle;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public @NotNull VulkanicResult waitFor(@NotNull Duration timeout) {
         return device.waitForFence(this, timeout);
     }

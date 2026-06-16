@@ -44,13 +44,13 @@ public record VulkanicGraphicsPipelineCreateInfo(
         }
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "UnusedReturnValue"})
     @Contract(mutates = "param1,param2", value = "_, _ -> param1")
     public VkGraphicsPipelineCreateInfo build(VkGraphicsPipelineCreateInfo pCreateInfo, MemoryStack stack) {
-        VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(stages.size(), stack);
+        VkPipelineShaderStageCreateInfo.Buffer pStages = VkPipelineShaderStageCreateInfo.calloc(stages.size(), stack);
         for (int i = 0; i < stages.size(); i++) {
             VulkanicPipelineShaderStage stageInfo = stages.get(i);
-            shaderStages.get(i)
+            pStages.get(i)
                     .sType$Default()
                     .stage(stageInfo.stage().flag())
                     .module(stageInfo.module().handle())
@@ -80,7 +80,7 @@ public record VulkanicGraphicsPipelineCreateInfo(
         return pCreateInfo
                 .sType$Default()
                 .flags(flags.mask())
-                .pStages(shaderStages)
+                .pStages(pStages)
                 .pVertexInputState(vertexInputState != null ? vertexInputState.build(stack) : null)
                 .pInputAssemblyState(inputAssemblyState != null ? inputAssemblyState.build(stack) : null)
                 .pViewportState(viewportState != null ? viewportState.build(stack) : null)

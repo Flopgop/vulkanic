@@ -3,7 +3,6 @@ package net.flamgop.vulkanic.pipeline.graphics;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.lwjgl.vulkan.VkRenderPassCreateInfo;
 
 public final class VulkanicRenderPass implements AutoCloseable {
 

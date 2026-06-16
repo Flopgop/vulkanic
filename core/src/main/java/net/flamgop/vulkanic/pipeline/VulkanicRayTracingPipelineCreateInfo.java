@@ -37,7 +37,7 @@ public record VulkanicRayTracingPipelineCreateInfo(
         }
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "UnusedReturnValue"})
     @Contract(mutates = "param1,param2", value = "_, _ -> param1")
     public VkRayTracingPipelineCreateInfoKHR build(VkRayTracingPipelineCreateInfoKHR createInfo, MemoryStack stack) {
         VkPipelineShaderStageCreateInfo.Buffer pStages = VkPipelineShaderStageCreateInfo.calloc(stages.size(), stack);

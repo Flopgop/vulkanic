@@ -7,7 +7,8 @@ public interface VulkanicDebugMessenger {
      * @param severity message severity
      * @param type message type
      * @param callbackData related message data
-     * @return false. True is technically UB
+     * @return Applications should always return `false`. `true` is reserved for use in layer development.
      */
+    @SuppressWarnings("SameReturnValue")
     boolean message(EnumIntBitset<VulkanicDebugMessageSeverityFlag> severity, EnumIntBitset<VulkanicDebugMessageTypeFlag> type, VulkanicDebugCallbackData callbackData);
 }

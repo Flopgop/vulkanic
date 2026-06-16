@@ -8,6 +8,7 @@ public enum VulkanicQueryControlFlag implements Bitmaskable<Integer> {
 
     ;
     private final int flag;
+    @SuppressWarnings("SameParameterValue")
     VulkanicQueryControlFlag(int flag) {
         this.flag = flag;
     }

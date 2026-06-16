@@ -4,6 +4,7 @@ import org.lwjgl.vulkan.AMDDisplayNativeHdr;
 import org.lwjgl.vulkan.EXTSwapchainColorspace;
 import org.lwjgl.vulkan.KHRSurface;
 
+@SuppressWarnings("SpellCheckingInspection")
 public enum VulkanicColorSpace {
     SRGB_NONLINEAR_KHR(KHRSurface.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR),
     DISPLAY_P3_NONLINEAR_EXT(EXTSwapchainColorspace.VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT),

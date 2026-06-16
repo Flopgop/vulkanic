@@ -10,6 +10,7 @@ public enum VulkanicFilter {
     CUBIC_IMG(CUBIC_EXT),
     ;
     private final int qualifier;
+    @SuppressWarnings("SameParameterValue")
     VulkanicFilter(VulkanicFilter format) {
         this.qualifier = format.qualifier;
     }

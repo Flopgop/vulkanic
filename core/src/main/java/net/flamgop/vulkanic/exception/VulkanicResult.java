@@ -99,6 +99,7 @@ public enum VulkanicResult {
         return qualifier;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean success() {
         return this == SUCCESS;
     }

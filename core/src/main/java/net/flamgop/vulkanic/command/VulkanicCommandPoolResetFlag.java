@@ -8,6 +8,7 @@ public enum VulkanicCommandPoolResetFlag implements Bitmaskable<Integer> {
     ;
 
     private final int flag;
+    @SuppressWarnings("SameParameterValue")
     VulkanicCommandPoolResetFlag(int flag) {
         this.flag = flag;
     }

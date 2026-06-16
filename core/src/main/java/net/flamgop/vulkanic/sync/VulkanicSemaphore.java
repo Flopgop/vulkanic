@@ -17,6 +17,11 @@ public final class VulkanicSemaphore implements AutoCloseable {
         this.type = type;
     }
 
+    @Contract(pure = true)
+    public VulkanicSemaphoreType type() {
+        return type;
+    }
+
     @ApiStatus.Internal
     @Contract(pure = true)
     public long handle() {

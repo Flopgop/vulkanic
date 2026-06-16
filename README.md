@@ -12,7 +12,7 @@
 Silly little Vulkan abstraction based on [LWJGL 3](https://github.com/LWJGL/lwjgl3). <br>
 because Vulkan is really annoying sometimes.
 
-This library is usable, but is probably filled with mysterious bugs noone's ever heard of, here be dragons.
+This library is usable but is probably filled with mysterious bugs no one's ever heard of, here be dragons.
 
 ### Current Features:
 - Most of core Vulkan up to 1.4
@@ -26,7 +26,7 @@ This library is usable, but is probably filled with mysterious bugs noone's ever
 - the rest of Descriptor Heap
 - as many extensions as feasible
 - proper testing
-- maybe swap LWJGL for a more abstract Vulkan library (e.g. for better android support)
+- maybe swap LWJGL for a more abstract Vulkan library (e.g., for better android support)
 
 ## Contributing
 Pull requests are welcome, though this library has a very specific style, so I may make changes to the anything added.

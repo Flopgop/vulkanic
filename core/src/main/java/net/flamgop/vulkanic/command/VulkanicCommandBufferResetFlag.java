@@ -8,6 +8,7 @@ public enum VulkanicCommandBufferResetFlag implements Bitmaskable<Integer> {
     ;
 
     private final int flag;
+    @SuppressWarnings("SameParameterValue")
     VulkanicCommandBufferResetFlag(int flag) {
         this.flag = flag;
     }

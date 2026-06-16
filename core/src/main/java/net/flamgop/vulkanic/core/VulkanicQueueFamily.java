@@ -8,7 +8,6 @@ import java.util.List;
 
 public final class VulkanicQueueFamily {
 
-    private final VulkanicDevice device;
     private final int index;
 
     private final List<VulkanicQueue> queues;
@@ -17,7 +16,6 @@ public final class VulkanicQueueFamily {
     /// @see VulkanicDevice#queueFamily
     @ApiStatus.Internal
     public VulkanicQueueFamily(@NotNull VulkanicDevice device, int index, int queueCount) {
-        this.device = device;
         this.index = index;
         this.queues = new ArrayList<>(queueCount);
         for (int i = 0; i < queueCount; i++) {

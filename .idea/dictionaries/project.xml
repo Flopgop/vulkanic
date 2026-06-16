@@ -2,11 +2,27 @@
   <dictionary name="project">
     <words>
       <w>Bitmaskable</w>
+      <w>Mebibytes</w>
+      <w>Spirv</w>
+      <w>Strided</w>
       <w>Swapchain</w>
+      <w>Ycbcr</w>
       <w>amdx</w>
+      <w>bfloat</w>
+      <w>fpencoding</w>
+      <w>khronos</w>
+      <w>lunarg</w>
       <w>qcom</w>
       <w>raygen</w>
+      <w>sfixed</w>
+      <w>sfloat</w>
+      <w>sint</w>
+      <w>sscaled</w>
+      <w>swapchain</w>
+      <w>unorm</w>
+      <w>uscaled</w>
       <w>vulkanic</w>
+      <w>ycbcr</w>
     </words>
   </dictionary>
 </component>

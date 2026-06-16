@@ -10,6 +10,7 @@ public enum VulkanicQueryPoolCreateFlag implements Bitmaskable<Integer> {
     ;
     private final int flag;
 
+    @SuppressWarnings("SameParameterValue")
     VulkanicQueryPoolCreateFlag(int flag) {
         this.flag = flag;
     }

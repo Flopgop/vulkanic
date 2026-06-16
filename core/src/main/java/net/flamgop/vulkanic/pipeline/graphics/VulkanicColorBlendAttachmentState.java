@@ -18,6 +18,7 @@ public record VulkanicColorBlendAttachmentState(
         );
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public @NotNull VkPipelineColorBlendAttachmentState get(@NotNull VkPipelineColorBlendAttachmentState state) {
         return state
                 .blendEnable(blendEnable)

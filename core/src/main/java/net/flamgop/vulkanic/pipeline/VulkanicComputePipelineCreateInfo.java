@@ -36,7 +36,7 @@ public record VulkanicComputePipelineCreateInfo(
         }
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "UnusedReturnValue"})
     @Contract(mutates = "param1,param2", value = "_, _ -> param1")
     public VkComputePipelineCreateInfo build(VkComputePipelineCreateInfo pCreateInfo, MemoryStack stack) {
         long pNext = this.pNext;

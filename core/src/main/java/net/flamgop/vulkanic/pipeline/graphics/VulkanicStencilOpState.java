@@ -8,6 +8,7 @@ public record VulkanicStencilOpState(
     VulkanicStencilOp depthFailOp, VulkanicCompareOp compareOp,
     int compareMask, int writeMask, int reference
 ) {
+    @SuppressWarnings("UnusedReturnValue")
     public @NotNull VkStencilOpState get(@NotNull VkStencilOpState struct) {
         return struct
                 .failOp(failOp.qualifier())

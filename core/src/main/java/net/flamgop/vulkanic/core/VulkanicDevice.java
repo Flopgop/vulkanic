@@ -8,8 +8,6 @@ import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
 import net.flamgop.vulkanic.pipeline.*;
-import net.flamgop.vulkanic.pipeline.VulkanicComputePipeline;
-import net.flamgop.vulkanic.pipeline.VulkanicGraphicsPipeline;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
@@ -80,7 +78,7 @@ public final class VulkanicDevice implements AutoCloseable {
     /// @param physicalDevice A [VulkanicPhysicalDevice] obtained from a [VulkanicInstance] via [VulkanicInstance#enumeratePhysicalDevices]
     /// @param extensions A collection of Vulkan extensions to apply
     /// @param layers A collection of Vulkan Validation Layers to apply
-    /// @param queueCreateInfos A list of queue infos, to prepopulate this device's queue families
+    /// @param queueCreateInfos A list of queue infos to prepopulate this device's queue families
     /// @param features A [VulkanicDeviceFeatures] object configured for the features required of this device
     /// @see VulkanicInstance#enumeratePhysicalDevices
     /// @see VulkanicPhysicalDevice#supportedExtensions
@@ -175,7 +173,7 @@ public final class VulkanicDevice implements AutoCloseable {
     }
 
     @ApiStatus.Internal
-    protected @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
+    @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pQueue = stack.callocPointer(1);
             VK11.vkGetDeviceQueue(this.handle, queueFamily.index(), queueIndex, pQueue);
@@ -401,7 +399,7 @@ public final class VulkanicDevice implements AutoCloseable {
                 pPushConstantRanges.get(i)
                         .stageFlags(pushConstantRange.stageFlags().mask())
                         .offset(pushConstantRange.offset())
-                        .size((int) pushConstantRange.size().bytes()); // note: push constants can't actually be larger than like 512 bytes usually
+                        .size((int) pushConstantRange.size().bytes()); // note: push constants can't actually usually be larger than like 512 bytes
             }
 
             LongBuffer pSetLayouts = stack.callocLong(setLayouts.size());
@@ -821,7 +819,7 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "SpellCheckingInspection"})
     public @NotNull VulkanicResult getImageOpaqueCaptureData(List<VulkanicImage> images, List<VulkanicHostAddressRange> datas) {
         if (!features.supportsDescriptorHeapCaptureReplay()) {
             throw new UnsupportedOperationException("VulkanicDevice#getImageOpaqueCaptureData requires the descriptorHeapCaptureReplay feature.");

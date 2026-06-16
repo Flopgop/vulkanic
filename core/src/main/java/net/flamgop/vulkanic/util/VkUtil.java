@@ -73,7 +73,7 @@ public class VkUtil {
     }
 
     public static void check(int ret) throws VulkanException {
-        if (ret < 0) { // note: *technically* there are other results that are not VK_SUCCESS, but are positive values and aren't technically fatal errors, and you probably don't want an assert to fail for a basic suboptimal error or something
+        if (ret < 0) { // note: *technically* there are other results that are not VK_SUCCESS, but are positive values and aren't technically fatal errors, and you probably don't want an assertion to fail for a basic suboptimal error or something
 //            throw new AssertionError(String.format("VkUtil#check failed with %s (error code: %d)", errorToString(ret), ret));
             throw new VulkanException(VulkanicResult.valueOf(ret));
         }

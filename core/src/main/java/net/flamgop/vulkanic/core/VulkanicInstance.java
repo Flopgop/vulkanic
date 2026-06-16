@@ -39,7 +39,7 @@ public final class VulkanicInstance implements AutoCloseable {
     /// @param applicationInfo A [VulkanicApplicationInfo] object describing the name, version, and required Vulkan version for this app and engine
     /// @param layers A collection of Vulkan Validation Layers to apply to this instance. Will fail if any are not present.
     /// @param extensions A collection of Vulkan extensions to apply to this instance. Will fail if any are not supported.
-    /// @param debugMessenger A [VulkanicDebugMessenger], or `null`. Note: If a [VulkanicDebugMessenger] is provided and `extensions` does not contain `VK_EXT_debug_utils` this will fail by default.
+    /// @param debugMessenger A [VulkanicDebugMessenger], or `null`. Note: If a [VulkanicDebugMessenger] is provided and `extensions` does not contain `VK_EXT_debug_utils`, this will fail by default.
     public VulkanicInstance(@NotNull VulkanicApplicationInfo applicationInfo, @NotNull Collection<String> layers, @NotNull Collection<String> extensions, @Nullable VulkanicDebugMessenger debugMessenger) throws VulkanException {
         this.applicationInfo = applicationInfo;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -77,6 +77,7 @@ public final class VulkanicInstance implements AutoCloseable {
                         )
                         .pfnUserCallback((messageSeverity, messageTypes, pCallbackData, _) -> {
                             if (pCallbackData == 0) return VK10.VK_FALSE;
+                            @SuppressWarnings("resource")
                             VkDebugUtilsMessengerCallbackDataEXT callbackDataEXT = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
                             List<VulkanicDebugLabel> queueLabels = new ArrayList<>();
                             List<VulkanicDebugLabel> commandBufferLabels = new ArrayList<>();

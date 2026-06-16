@@ -8,6 +8,7 @@ public enum VulkanicFenceCreateFlag implements Bitmaskable<Integer> {
     ;
 
     private final int flag;
+    @SuppressWarnings("SameParameterValue")
     VulkanicFenceCreateFlag(int flag) {
         this.flag = flag;
     }

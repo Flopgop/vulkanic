@@ -8,6 +8,7 @@ public record VulkanicViewport(float x, float y, float width, float height, floa
         this(0,0,0,0,0,0);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public @NotNull VkViewport get(VkViewport struct) {
         return struct
                 .x(x)

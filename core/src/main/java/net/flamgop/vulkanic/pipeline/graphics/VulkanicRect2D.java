@@ -14,6 +14,7 @@ public record VulkanicRect2D(Vector2ic offset, Vector2ic extent) {
         this(new Vector2i(x, y), new Vector2i(w, h));
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public @NotNull VkRect2D get(VkRect2D struct) {
         return struct
                 .extent(e -> e.set(extent.x(), extent.y()))

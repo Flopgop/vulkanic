@@ -40,6 +40,7 @@ public final class VulkanicPhysicalDevice {
         }
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean supportsFeatures(@NotNull VulkanicDeviceFeatures features) {
         Set<String> extensions = this.supportedExtensions().stream().map(VulkanicExtensionProperties::name).collect(Collectors.toSet());
         return features.isSupportedBy(this) && extensions.containsAll(features.requiredExtensions());

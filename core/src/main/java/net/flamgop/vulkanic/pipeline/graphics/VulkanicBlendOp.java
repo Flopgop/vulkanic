@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.pipeline.graphics;
 import org.lwjgl.vulkan.EXTBlendOperationAdvanced;
 import org.lwjgl.vulkan.VK10;
 
+@SuppressWarnings("SpellCheckingInspection")
 public enum VulkanicBlendOp {
     ADD(VK10.VK_BLEND_OP_ADD),
     SUBTRACT(VK10.VK_BLEND_OP_SUBTRACT),

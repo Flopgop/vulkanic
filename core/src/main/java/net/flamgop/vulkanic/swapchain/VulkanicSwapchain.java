@@ -3,7 +3,6 @@ package net.flamgop.vulkanic.swapchain;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
-import net.flamgop.vulkanic.memory.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
 import net.flamgop.vulkanic.sync.VulkanicFence;
@@ -11,7 +10,6 @@ import net.flamgop.vulkanic.sync.VulkanicSemaphore;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.*;
 import org.joml.Vector3i;
-import org.joml.Vector3ic;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRSwapchain;
 import org.lwjgl.vulkan.VK10;
@@ -43,7 +41,7 @@ public final class VulkanicSwapchain implements AutoCloseable {
             LongBuffer pSwapchainImages = stack.callocLong(pCount.get(0));
             KHRSwapchain.vkGetSwapchainImagesKHR(this.device.handle(), this.handle, pCount, pSwapchainImages);
             List<VulkanicImage> images = new ArrayList<>();
-            VulkanicImageCreateInfo mockCreateInfo = new VulkanicImageCreateInfo( // vulkanic requires a create info for all images,
+            VulkanicImageCreateInfo mockCreateInfo = new VulkanicImageCreateInfo( // vulkanic requires creation info for all images,
                     EnumIntBitset.empty(),
                     VulkanicImageType.TYPE_2D,
                     createInfo.imageFormat(),
