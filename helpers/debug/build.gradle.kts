@@ -7,6 +7,10 @@ dependencies {
     implementation(project(":core"))
 }
 
+java {
+    withSourcesJar()
+}
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {

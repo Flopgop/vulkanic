@@ -3,7 +3,7 @@ package net.flamgop.vulkanic.memory.image;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.MappedMemory;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
-import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;

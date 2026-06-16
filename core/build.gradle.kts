@@ -32,6 +32,10 @@ dependencies {
     }
 }
 
+java {
+    withSourcesJar()
+}
+
 sourceSets {
     main {
         java {

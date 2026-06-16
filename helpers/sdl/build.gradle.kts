@@ -21,6 +21,10 @@ dependencies {
     }
 }
 
+java {
+    withSourcesJar()
+}
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {

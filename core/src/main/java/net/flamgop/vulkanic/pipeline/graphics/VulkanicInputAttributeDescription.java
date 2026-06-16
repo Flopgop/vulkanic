@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.pipeline.graphics;
 
-import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 

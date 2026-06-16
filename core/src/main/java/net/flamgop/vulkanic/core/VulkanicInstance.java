@@ -156,7 +156,7 @@ public final class VulkanicInstance implements AutoCloseable {
 
             List<VulkanicPhysicalDevice> physicalDevices = new ArrayList<>();
             for (int i = 0; i < pDevices.capacity(); i++) {
-                physicalDevices.add(new VulkanicPhysicalDevice(this.handle, pDevices.get(i)));
+                physicalDevices.add(new VulkanicPhysicalDevice(this, pDevices.get(i)));
             }
             return physicalDevices;
         }

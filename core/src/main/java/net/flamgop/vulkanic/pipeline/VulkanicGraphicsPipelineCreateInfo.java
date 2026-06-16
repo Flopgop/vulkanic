@@ -1,7 +1,7 @@
 package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
-import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.util.EnumIntBitset;

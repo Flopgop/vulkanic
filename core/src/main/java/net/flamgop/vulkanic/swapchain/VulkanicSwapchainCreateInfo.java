@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.swapchain;
 
-import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.VulkanicImageUsageFlag;
 import net.flamgop.vulkanic.memory.image.VulkanicSharingMode;
 import net.flamgop.vulkanic.surface.VulkanicSurface;

@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.pipeline.descriptor.heap;
 
-import net.flamgop.vulkanic.memory.VulkanicFormat;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
 import net.flamgop.vulkanic.memory.image.VulkanicImageViewCreateInfo;
 import org.jetbrains.annotations.NotNull;
