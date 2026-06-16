@@ -54,3 +54,7 @@ publishing {
         }
     }
 }
+
+tasks.named<Jar>("sourcesJar") {
+    dependsOn(tasks.compileJava)
+}
