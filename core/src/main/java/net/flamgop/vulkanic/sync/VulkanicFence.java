@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 
 /// note: most of the methods in this class are aliases to the relevant device method
-public class VulkanicFence implements AutoCloseable {
+public final class VulkanicFence implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

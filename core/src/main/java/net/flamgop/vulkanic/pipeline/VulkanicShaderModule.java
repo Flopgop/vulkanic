@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class VulkanicShaderModule implements AutoCloseable {
+public final class VulkanicShaderModule implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

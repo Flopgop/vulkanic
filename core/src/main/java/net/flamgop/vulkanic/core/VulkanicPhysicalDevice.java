@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public class VulkanicPhysicalDevice {
+public final class VulkanicPhysicalDevice {
 
     private final VkPhysicalDevice handle;
     private final VulkanicPhysicalDeviceProperties deviceProperties;

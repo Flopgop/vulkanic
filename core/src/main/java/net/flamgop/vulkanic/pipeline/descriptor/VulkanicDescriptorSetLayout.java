@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class VulkanicDescriptorSetLayout implements AutoCloseable {
+public final class VulkanicDescriptorSetLayout implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 

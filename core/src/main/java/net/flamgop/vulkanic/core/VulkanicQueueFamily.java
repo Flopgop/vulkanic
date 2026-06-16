@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VulkanicQueueFamily {
+public final class VulkanicQueueFamily {
 
     private final VulkanicDevice device;
     private final int index;

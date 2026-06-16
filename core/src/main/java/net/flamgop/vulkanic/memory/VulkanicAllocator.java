@@ -15,7 +15,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 
-public class VulkanicAllocator implements AutoCloseable {
+public final class VulkanicAllocator implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

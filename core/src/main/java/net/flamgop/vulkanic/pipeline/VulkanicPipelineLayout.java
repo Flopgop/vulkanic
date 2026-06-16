@@ -4,7 +4,7 @@ import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-public class VulkanicPipelineLayout implements AutoCloseable {
+public final class VulkanicPipelineLayout implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

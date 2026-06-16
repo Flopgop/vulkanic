@@ -12,7 +12,7 @@ import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 
 @SuppressWarnings("ClassCanBeRecord")
-public class VulkanicCommandPool implements AutoCloseable {
+public final class VulkanicCommandPool implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

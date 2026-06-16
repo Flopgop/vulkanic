@@ -8,7 +8,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 
-public class MappedMemory implements AutoCloseable {
+public final class MappedMemory implements AutoCloseable {
 
     private final VulkanicAllocator allocator;
     private final long allocation;
@@ -16,7 +16,7 @@ public class MappedMemory implements AutoCloseable {
 
     /// @see VulkanicBuffer#map
     /// @see net.flamgop.vulkanic.memory.image.VulkanicImage#map
-    protected MappedMemory(VulkanicAllocator allocator, long allocation, long address, long size) {
+    MappedMemory(VulkanicAllocator allocator, long allocation, long address, long size) {
         this.allocator = allocator;
         this.allocation = allocation;
         this.segment = MemorySegment.ofAddress(address).reinterpret(size);

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class VulkanicDescriptorSet implements AutoCloseable {
+public final class VulkanicDescriptorSet implements AutoCloseable {
     private final VulkanicDevice device;
     private final VulkanicDescriptorPool pool;
     private final long handle;

@@ -12,7 +12,7 @@ import java.util.*;
 
 // TODO: this still isn't very good, but it functions
 /// @apiNote !! This must be closed after it is used !!
-public class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements AutoCloseable {
+public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements AutoCloseable {
 
     public static VulkanicDeviceFeatures roadmap2022() {
         VulkanicDeviceFeatures features = new VulkanicDeviceFeatures()
@@ -138,6 +138,10 @@ public class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated implements
     private static final boolean fillModeNonSolid = false;
     @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
     private static final boolean shaderInt64 = false;
+    @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
+    private static final boolean shaderClipDistance = false;
+    @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
+    private static final boolean shaderCullDistance = false;
     @VulkanFeature(extension = EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceDescriptorIndexingFeatures.class)
     private static final boolean runtimeDescriptorArray = false;
     @VulkanExtension(EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)

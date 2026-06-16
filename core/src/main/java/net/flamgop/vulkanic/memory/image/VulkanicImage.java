@@ -13,7 +13,7 @@ import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
 
-public class VulkanicImage implements AutoCloseable {
+public final class VulkanicImage implements AutoCloseable {
 
     private static boolean isDepthFormat(VulkanicFormat format) {
         return switch (format) {

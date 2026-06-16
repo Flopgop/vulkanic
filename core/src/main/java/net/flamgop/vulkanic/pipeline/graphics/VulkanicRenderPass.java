@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.lwjgl.vulkan.VkRenderPassCreateInfo;
 
-public class VulkanicRenderPass implements AutoCloseable {
+public final class VulkanicRenderPass implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;

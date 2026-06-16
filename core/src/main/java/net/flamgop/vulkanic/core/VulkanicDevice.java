@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public class VulkanicDevice implements AutoCloseable {
+public final class VulkanicDevice implements AutoCloseable {
 
     private final VulkanicInstance instance;
     private final VkDevice handle;

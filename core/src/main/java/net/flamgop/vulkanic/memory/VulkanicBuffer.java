@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.util.vma.VmaAllocationInfo;
 
-public class VulkanicBuffer implements AutoCloseable {
+public final class VulkanicBuffer implements AutoCloseable {
 
     private final VulkanicAllocator allocator;
     private final long handle;

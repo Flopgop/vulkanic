@@ -7,7 +7,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.LongBuffer;
 
-public class SDLSurface implements VulkanicSurface {
+public final class SDLSurface implements VulkanicSurface {
 
     private static long createSurfaceForWindow(VulkanicInstance instance, long window) {
         try (MemoryStack stack = MemoryStack.stackPush()) {

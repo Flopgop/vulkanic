@@ -41,7 +41,7 @@ import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK13.*;
 
 @SuppressWarnings("UnusedReturnValue")
-public class VulkanicCommandBuffer implements AutoCloseable {
+public final class VulkanicCommandBuffer implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final VulkanicCommandPool pool;

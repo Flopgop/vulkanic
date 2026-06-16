@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class VulkanicImageView implements AutoCloseable {
+public final class VulkanicImageView implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final VulkanicImage image; // TODO: maybe use this?

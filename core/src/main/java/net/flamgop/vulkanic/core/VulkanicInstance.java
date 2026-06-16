@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class VulkanicInstance implements AutoCloseable {
+public final class VulkanicInstance implements AutoCloseable {
     private final @NotNull VulkanicApplicationInfo applicationInfo;
     private final @Unmodifiable @NotNull List<String> enabledLayers;
     private final @Unmodifiable @NotNull List<String> enabledExtensions;

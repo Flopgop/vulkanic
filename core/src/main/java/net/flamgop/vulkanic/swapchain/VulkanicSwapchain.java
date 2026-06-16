@@ -23,7 +23,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VulkanicSwapchain implements AutoCloseable {
+public final class VulkanicSwapchain implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final VulkanicSwapchainCreateInfo createInfo;

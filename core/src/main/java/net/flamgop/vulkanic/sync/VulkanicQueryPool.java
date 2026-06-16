@@ -4,7 +4,7 @@ import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-public class VulkanicQueryPool implements AutoCloseable {
+public final class VulkanicQueryPool implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;
