@@ -1,0 +1,31 @@
+package net.flamgop.vulkanic.pipeline.graphics.renderpass;
+
+import net.flamgop.vulkanic.util.Bitmaskable;
+import org.lwjgl.vulkan.*;
+
+public enum VulkanicSubpassDescriptionFlag implements Bitmaskable<Integer> {
+
+    PER_VIEW_ATTRIBUTES_NVX(NVXMultiviewPerViewAttributes.VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX),
+    PER_VIEW_POSITION_X_ONLY_NVX(NVXMultiviewPerViewAttributes.VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX),
+
+    TILE_SHADING_APRON_QCOM(QCOMTileShading.VK_SUBPASS_DESCRIPTION_TILE_SHADING_APRON_BIT_QCOM),
+
+    RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_EXT(EXTRasterizationOrderAttachmentAccess.VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT),
+    RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_EXT(EXTRasterizationOrderAttachmentAccess.VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT),
+    RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_EXT(EXTRasterizationOrderAttachmentAccess.VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT),
+
+    ENABLE_LEGACY_DITHERING_EXT(EXTLegacyDithering.VK_SUBPASS_DESCRIPTION_ENABLE_LEGACY_DITHERING_BIT_EXT),
+
+    FRAGMENT_REGION_EXT(EXTCustomResolve.VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT),
+    CUSTOM_RESOLVE_EXT(EXTCustomResolve.VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT),
+    ;
+    private final int flag;
+    VulkanicSubpassDescriptionFlag(int flag) {
+        this.flag = flag;
+    }
+
+    @Override
+    public Integer flag() {
+        return flag;
+    }
+}

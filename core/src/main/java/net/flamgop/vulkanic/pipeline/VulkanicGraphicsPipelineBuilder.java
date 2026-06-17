@@ -4,6 +4,7 @@ import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.ShaderUtil;
 import org.jetbrains.annotations.ApiStatus;

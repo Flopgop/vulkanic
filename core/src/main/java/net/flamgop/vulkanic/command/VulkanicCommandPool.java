@@ -46,8 +46,7 @@ public final class VulkanicCommandPool implements AutoCloseable {
         device.freeCommandBuffers(this, commandBuffers);
     }
 
-    @ApiStatus.Experimental
-    public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VkCommandBufferBeginInfo beginInfo) {
+    public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VulkanicCommandBufferBeginInfo beginInfo) {
         return device.beginCommandBuffer(commandBuffer, beginInfo);
     }
 

@@ -11,6 +11,9 @@ import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicFramebuffer;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicFramebufferCreateInfo;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
 import net.flamgop.vulkanic.swapchain.*;
 import net.flamgop.vulkanic.sync.*;
 import net.flamgop.vulkanic.util.EnumIntBitset;
@@ -316,8 +319,26 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VkCommandBufferBeginInfo beginInfo) {
-        return VulkanicResult.valueOf(VK11.vkBeginCommandBuffer(commandBuffer.handle(), beginInfo));
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VulkanicCommandBufferBeginInfo beginInfo) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkCommandBufferInheritanceInfo pInheritanceInfo;
+            if (beginInfo.inheritanceInfo() != null) {
+                pInheritanceInfo = VkCommandBufferInheritanceInfo.calloc(stack)
+                        .sType$Default()
+                        .renderPass(beginInfo.inheritanceInfo().renderPass().handle())
+                        .subpass(beginInfo.inheritanceInfo().subpass())
+                        .framebuffer(beginInfo.inheritanceInfo().framebuffer() != null ? beginInfo.inheritanceInfo().framebuffer().handle() : VK10.VK_NULL_HANDLE)
+                        .occlusionQueryEnable(beginInfo.inheritanceInfo().occlusionQueryEnable())
+                        .queryFlags(beginInfo.inheritanceInfo().queryFlags().mask())
+                        .pipelineStatistics(beginInfo.inheritanceInfo().pipelineStatistics().mask());
+            } else pInheritanceInfo = null;
+            VkCommandBufferBeginInfo pBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
+                    .sType$Default()
+                    .flags(beginInfo.flags().mask())
+                    .pInheritanceInfo(pInheritanceInfo);
+            return VulkanicResult.valueOf(VK11.vkBeginCommandBuffer(commandBuffer.handle(), pBeginInfo));
+        }
     }
 
     public @NotNull VulkanicResult endCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer) {
@@ -590,6 +611,35 @@ public final class VulkanicDevice implements AutoCloseable {
             pDescriptorSets.flip();
             VK10.vkFreeDescriptorSets(this.handle, pool.handle(), pDescriptorSets);
         }
+    }
+
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicFramebuffer createFramebuffer(@NotNull VulkanicFramebufferCreateInfo createInfo) throws VulkanException {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            List<VulkanicImageView> attachments = createInfo.attachments();
+            LongBuffer pAttachments;
+            if (attachments != null) {
+                pAttachments = stack.callocLong(attachments.size());
+                for (int i = 0; i < attachments.size(); i++) {
+                    pAttachments.put(i, attachments.get(i).handle());
+                }
+            } else pAttachments = null;
+
+            VkFramebufferCreateInfo pCreateInfo = VkFramebufferCreateInfo.calloc(stack)
+                    .sType$Default()
+                    .flags(createInfo.flags().mask())
+                    .renderPass(createInfo.renderPass().handle())
+                    .attachmentCount(attachments != null ? attachments.size() : 0)
+                    .pAttachments(pAttachments)
+                    .width(createInfo.width()).height(createInfo.height()).layers(createInfo.layers());
+            LongBuffer pFramebuffer = stack.callocLong(1);
+            VkUtil.check(VK10.vkCreateFramebuffer(handle, pCreateInfo, null, pFramebuffer));
+            return new VulkanicFramebuffer(this, pFramebuffer.get(0));
+        }
+    }
+
+    public void destroyFramebuffer(@NotNull VulkanicFramebuffer framebuffer) {
+        VK10.vkDestroyFramebuffer(handle, framebuffer.handle(), null);
     }
 
     @ApiStatus.Experimental

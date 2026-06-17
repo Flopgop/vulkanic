@@ -56,34 +56,34 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         this.handle = handle;
     }
 
-    public @NotNull VulkanicResult begin(@NotNull VkCommandBufferBeginInfo beginInfo) {
+    @Contract(mutates = "this", value = "_ -> !null")
+    public @NotNull VulkanicResult begin(@NotNull VulkanicCommandBufferBeginInfo beginInfo) {
         return pool.beginCommandBuffer(this, beginInfo);
     }
 
-    public @NotNull VulkanicResult begin(@NotNull EnumIntBitset<VulkanicCommandBufferUsageFlag> flags) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            return pool.beginCommandBuffer(this, VkCommandBufferBeginInfo.calloc(stack).flags(flags.mask()).sType$Default());
-        }
-    }
-
+    @Contract(mutates = "this", value = "_ -> !null")
     public @NotNull VulkanicResult reset(@NotNull EnumIntBitset<VulkanicCommandBufferResetFlag> flags) {
         return pool.resetCommandBuffer(this, flags);
     }
 
+    @Contract(mutates = "this", value = "-> !null")
     public @NotNull VulkanicResult end() {
         return pool.endCommandBuffer(this);
     }
 
+    @Contract(mutates = "this")
     public void bindPipeline(@NotNull VulkanicPipelineBindPoint pipelineBindPoint, @NotNull VulkanicPipeline pipeline) {
         vkCmdBindPipeline(handle, pipelineBindPoint.qualifier(), pipeline.handle());
     }
 
+    @Contract(mutates = "this")
     public void bindDescriptorSet(@NotNull VulkanicPipelineBindPoint pipelineBindPoint, @NotNull VulkanicPipelineLayout layout, int firstSet, @NotNull VulkanicDescriptorSet set, int @Nullable [] dynamicOffsets) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             vkCmdBindDescriptorSets(handle, pipelineBindPoint.qualifier(), layout.handle(), firstSet, stack.longs(set.handle()), dynamicOffsets != null ? stack.ints(dynamicOffsets) : null);
         }
     }
 
+    @Contract(mutates = "this")
     public void bindDescriptorSets(@NotNull VulkanicPipelineBindPoint pipelineBindPoint, @NotNull VulkanicPipelineLayout layout, int firstSet, @NotNull List<VulkanicDescriptorSet> sets, int @Nullable [] dynamicOffsets) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pSets = stack.callocLong(sets.size());
@@ -94,18 +94,22 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void pushConstants(@NotNull VulkanicPipelineLayout layout, EnumIntBitset<VulkanicShaderStage> stageFlags, int offset, @NotNull ByteBuffer values) {
         vkCmdPushConstants(handle, layout.handle(), stageFlags.mask(), offset, values);
     }
 
+    @Contract(mutates = "this")
     public void dispatch(int groupCountX, int groupCountY, int groupCountZ) {
         vkCmdDispatch(handle, groupCountX, groupCountY, groupCountZ);
     }
 
+    @Contract(mutates = "this")
     public void dispatchIndirect(@NotNull VulkanicBuffer buffer, long offset) {
         vkCmdDispatchIndirect(handle, buffer.handle(), offset);
     }
 
+    @Contract(mutates = "this")
     public void setViewport(int firstViewport, @NotNull VulkanicViewport @NotNull ... viewports) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkViewport.Buffer pViewports = VkViewport.calloc(viewports.length, stack);
@@ -116,6 +120,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void setScissor(int firstScissor, @NotNull VulkanicRect2D @NotNull ... scissors) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkRect2D.Buffer pScissors = VkRect2D.calloc(scissors.length, stack);
@@ -126,34 +131,42 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void setLineWidth(float lineWidth) {
         vkCmdSetLineWidth(handle, lineWidth);
     }
 
+    @Contract(mutates = "this")
     public void setDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor) {
         vkCmdSetDepthBias(handle, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
     }
 
+    @Contract(mutates = "this")
     public void setBlendConstants(@NotNull FloatBuffer blendConstants) {
         vkCmdSetBlendConstants(handle, blendConstants);
     }
 
+    @Contract(mutates = "this")
     public void setDepthBounds(float minDepthBounds, float maxDepthBounds) {
         vkCmdSetDepthBounds(handle, minDepthBounds, maxDepthBounds);
     }
 
+    @Contract(mutates = "this")
     public void setStencilCompareMask(int faceMask, int compareMask) {
         vkCmdSetStencilCompareMask(handle, faceMask, compareMask);
     }
 
+    @Contract(mutates = "this")
     public void setStencilWriteMask(int faceMask, int writeMask) {
         vkCmdSetStencilWriteMask(handle, faceMask, writeMask);
     }
 
+    @Contract(mutates = "this")
     public void setStencilReference(int faceMask, int reference) {
         vkCmdSetStencilReference(handle, faceMask, reference);
     }
 
+    @Contract(mutates = "this")
     public void bindVertexBuffers(int firstBinding, @NotNull VulkanicBuffer @NotNull [] buffers, long @NotNull [] offsets) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pBuffers = stack.longs(Arrays.stream(buffers).mapToLong(VulkanicBuffer::handle).toArray());
@@ -162,67 +175,83 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void bindIndexBuffer(@NotNull VulkanicBuffer buffer, long offset, @NotNull VulkanicIndexType indexType) {
         vkCmdBindIndexBuffer(handle, buffer.handle(), offset, indexType.qualifier());
     }
 
+    @Contract(mutates = "this")
     public void draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance) {
         vkCmdDraw(handle, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
+    @Contract(mutates = "this")
     public void drawIndexed(int indexCount, int instanceCount, int firstIndex, int vertexOffset, int firstInstance) {
         vkCmdDrawIndexed(handle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
+    @Contract(mutates = "this")
     public void drawIndirect(@NotNull VulkanicBuffer buffer, long offset, int drawCount, int stride) {
         vkCmdDrawIndirect(handle, buffer.handle(), offset, drawCount, stride);
     }
 
+    @Contract(mutates = "this")
     public void drawIndexedIndirect(@NotNull VulkanicBuffer buffer, long offset, int drawCount, int stride) {
         vkCmdDrawIndexedIndirect(handle, buffer.handle(), offset, drawCount, stride);
     }
 
+    @Contract(mutates = "this")
     public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageBlit.Buffer pRegions, @NotNull VulkanicFilter filter) {
         vkCmdBlitImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions, filter.qualifier());
     }
 
+    @Contract(mutates = "this")
     public void clearDepthStencilImage(@NotNull VulkanicImage image, @NotNull VulkanicImageLayout layout, @NotNull VkClearDepthStencilValue pDepthStencil, @NotNull VkImageSubresourceRange.Buffer pRanges) {
         vkCmdClearDepthStencilImage(handle, image.handle(), layout.qualifier(), pDepthStencil, pRanges);
     }
 
+    @Contract(mutates = "this")
     public void clearAttachments(@NotNull VkClearAttachment.Buffer pAttachments, @NotNull VkClearRect.Buffer pRects) {
         vkCmdClearAttachments(handle, pAttachments, pRects);
     }
 
+    @Contract(mutates = "this")
     public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageResolve.Buffer pRegions) {
         vkCmdResolveImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
     }
 
+    @Contract(mutates = "this")
     public void beginRenderPass(@NotNull VkRenderPassBeginInfo pRenderPassBegin, int contents) {
         vkCmdBeginRenderPass(handle, pRenderPassBegin, contents);
     }
 
+    @Contract(mutates = "this")
     public void nextSubpass(int contents) {
         vkCmdNextSubpass(handle, contents);
     }
 
+    @Contract(mutates = "this")
     public void endRenderPass() {
         vkCmdEndRenderPass(handle);
     }
 
+    @Contract(mutates = "this") /*this technically mutates buffer, but doesn't mutate it until the command is submitted, how do I manage that?*/
     public void updateBuffer(@NotNull VulkanicBuffer buffer, long dstOffset, @NotNull ByteBuffer data) {
         vkCmdUpdateBuffer(handle, buffer.handle(), dstOffset, data);
     }
 
+    @Contract(mutates = "this")
     public void copyBuffer(@NotNull VulkanicBuffer srcBuffer, @NotNull VulkanicBuffer dstBuffer, VkBufferCopy.Buffer pRegions) {
         vkCmdCopyBuffer(handle, srcBuffer.handle(), dstBuffer.handle(), pRegions);
     }
 
+    @Contract(mutates = "this")
     public void copyImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageCopy.Buffer pRegions) {
         vkCmdCopyImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
     }
 
     @SuppressWarnings("resource")
+    @Contract(mutates = "this")
     public void copyBufferToImage(@NotNull VulkanicBuffer srcBuffer, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<@NotNull VulkanicBufferImageCopy> regions) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkBufferImageCopy.Buffer pRegions = VkBufferImageCopy.calloc(regions.size(), stack);
@@ -245,19 +274,23 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void copyImageToBuffer(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicBuffer dstBuffer, VkBufferImageCopy.Buffer pRegions) {
         vkCmdCopyImageToBuffer(handle, srcImage.handle(), srcLayout.qualifier(), dstBuffer.handle(), pRegions);
     }
 
+    @Contract(mutates = "this")
     public void fillBuffer(@NotNull VulkanicBuffer dstBuffer, long dstOffset, @NotNull VulkanicDeviceSize size, int data) {
         vkCmdFillBuffer(handle, dstBuffer.handle(), dstOffset, size.bytes(), data);
     }
 
+    @Contract(mutates = "this")
     public void pipelineBarrier(int srcStageMask, int dstStageMask, int dependencyFlags, @Nullable VkMemoryBarrier.Buffer pMemoryBarriers, @Nullable VkBufferMemoryBarrier.Buffer pBufferMemoryBarriers, @Nullable VkImageMemoryBarrier.Buffer pImageMemoryBarriers) {
         vkCmdPipelineBarrier(handle, srcStageMask, dstStageMask, dependencyFlags, pMemoryBarriers, pBufferMemoryBarriers, pImageMemoryBarriers);
     }
 
     @SuppressWarnings("resource")
+    @Contract(mutates = "this")
     public void pipelineBarrier(@NotNull VulkanicDependencyInfo info) {
         if (!device.features().supportsSynchronization2()) {
             throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier requires the synchronization2 device extension/feature to be enabled!");
@@ -314,11 +347,13 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void executeCommands(PointerBuffer pCommandBuffers) {
         vkCmdExecuteCommands(handle, pCommandBuffers);
     }
 
     @SuppressWarnings("resource")
+    @Contract(mutates = "this")
     public void beginRendering(@NotNull VulkanicRenderingInfo renderingInfo) {
         if (!device.features().supportsDynamicRendering()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#beginRendering requires the dynamicRendering device feature.");
@@ -388,6 +423,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void endRendering() {
         if (!device.features().supportsDynamicRendering()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#endRendering requires the dynamicRendering device feature.");
@@ -395,6 +431,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         vkCmdEndRendering(handle);
     }
 
+    @Contract(mutates = "this")
     public void drawMeshTasksEXT(int groupCountX, int groupCountY, int groupCountZ) {
         if (!device.features().supportsMeshShader()) {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#drawMeshTasksEXT requires the meshShader device feature.");
@@ -402,6 +439,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         EXTMeshShader.vkCmdDrawMeshTasksEXT(this.handle, groupCountX, groupCountY, groupCountZ);
     }
 
+    @Contract(mutates = "this")
     public void transitionImageLayout(
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
@@ -415,6 +453,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         );
     }
 
+    @Contract(mutates = "this")
     public void transitionImageLayout(
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
@@ -430,6 +469,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         );
     }
 
+    @Contract(mutates = "this")
     public void transitionImageLayout(
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
@@ -442,6 +482,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         transitionImageLayout(image, oldLayout, newLayout, srcStage, srcAccessMask, dstStage, dstAccessMask, 0, -1);
     }
 
+    @Contract(mutates = "this")
     public void transitionImageLayout(
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
@@ -470,26 +511,32 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         ));
     }
 
+    @Contract(mutates = "this")
     public void beginQuery(@NotNull VulkanicQueryPool queryPool, int query, EnumIntBitset<VulkanicQueryControlFlag> flags) {
         vkCmdBeginQuery(this.handle, queryPool.handle(), query, flags.mask());
     }
 
+    @Contract(mutates = "this")
     public void endQuery(@NotNull VulkanicQueryPool queryPool, int query) {
         vkCmdEndQuery(this.handle, queryPool.handle(), query);
     }
 
+    @Contract(mutates = "this")
     public void resetQueryPool(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount) {
         vkCmdResetQueryPool(this.handle, queryPool.handle(), firstQuery, queryCount);
     }
 
+    @Contract(mutates = "this")
     public void writeTimestamp(@NotNull EnumLongBitset<VulkanicPipelineStageFlag> pipelineStage, @NotNull VulkanicQueryPool queryPool, int query) {
         vkCmdWriteTimestamp2(this.handle, pipelineStage.mask(), queryPool.handle(), query);
     }
 
+    @Contract(mutates = "this")
     public void copyQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull VulkanicBuffer dstBuffer, long dstOffset, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
         vkCmdCopyQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, dstBuffer.handle(), dstOffset, stride, flags.mask());
     }
 
+    @Contract(mutates = "this")
     public void bindResourceHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindResourceHeap requires the descriptor heap feature");
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -502,6 +549,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void bindSamplerHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindSamplerHeap requires the descriptor heap feature");
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -514,6 +562,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void pushData(@NotNull VulkanicPushDataInfo pushInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#pushData requires the descriptor heap feature");
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -521,6 +570,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void traceRays(
             VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
             VulkanicStridedDeviceAddressRegion missShaderBindingTable,
@@ -541,6 +591,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void traceRaysIndirect(
             VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
             VulkanicStridedDeviceAddressRegion missShaderBindingTable,
@@ -561,6 +612,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
         }
     }
 
+    @Contract(mutates = "this")
     public void setRayTracingPipelineStackSize(int pipelineStackSize) {
         if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
         KHRRayTracingPipeline.vkCmdSetRayTracingPipelineStackSizeKHR(this.handle, pipelineStackSize);

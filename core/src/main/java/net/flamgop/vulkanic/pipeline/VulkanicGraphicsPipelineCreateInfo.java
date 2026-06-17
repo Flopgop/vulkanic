@@ -4,6 +4,7 @@ import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
 import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

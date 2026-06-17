@@ -1,17 +1,16 @@
-package net.flamgop.vulkanic.pipeline.graphics;
+package net.flamgop.vulkanic.pipeline.graphics.renderpass;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-public final class VulkanicRenderPass implements AutoCloseable {
-
+public final class VulkanicFramebuffer implements AutoCloseable {
     private final VulkanicDevice device;
     private final long handle;
 
-    /// @see VulkanicDevice#createRenderPass
+    /// @see VulkanicDevice#createFramebuffer
     @ApiStatus.Internal
-    public VulkanicRenderPass(VulkanicDevice device, long handle) {
+    public VulkanicFramebuffer(VulkanicDevice device, long handle) {
         this.device = device;
         this.handle = handle;
     }
@@ -24,6 +23,6 @@ public final class VulkanicRenderPass implements AutoCloseable {
 
     @Override
     public void close() {
-        device.destroyRenderPass(this);
+        device.destroyFramebuffer(this);
     }
 }
