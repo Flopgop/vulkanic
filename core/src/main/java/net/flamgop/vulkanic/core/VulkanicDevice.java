@@ -965,7 +965,7 @@ public final class VulkanicDevice implements AutoCloseable {
         VulkanicFence fence = null;
         try {
             commandBuffer = allocateCommandBuffer(pool, VulkanicCommandBufferLevel.PRIMARY);
-            VulkanicResult result = commandBuffer.begin(EnumIntBitset.of(VulkanicCommandBufferUsageFlag.ONE_TIME_SUBMIT));
+            VulkanicResult result = commandBuffer.begin(new VulkanicCommandBufferBeginInfo(EnumIntBitset.of(VulkanicCommandBufferUsageFlag.ONE_TIME_SUBMIT), null));
             if (!result.success()) {
                 throw new VulkanException(result);
             }
