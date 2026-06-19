@@ -11,9 +11,7 @@ import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
-import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicFramebuffer;
-import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicFramebufferCreateInfo;
-import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.*;
 import net.flamgop.vulkanic.swapchain.*;
 import net.flamgop.vulkanic.sync.*;
 import net.flamgop.vulkanic.util.EnumIntBitset;
@@ -28,6 +26,7 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.time.Duration;
 import java.util.*;
@@ -642,11 +641,82 @@ public final class VulkanicDevice implements AutoCloseable {
         VK10.vkDestroyFramebuffer(handle, framebuffer.handle(), null);
     }
 
-    @ApiStatus.Experimental
-    public @NotNull VulkanicRenderPass createRenderPass(@NotNull VkRenderPassCreateInfo createInfo) throws VulkanException {
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicRenderPass createRenderPass(@NotNull VulkanicRenderPassCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkAttachmentDescription.Buffer pAttachments = VkAttachmentDescription.calloc(createInfo.attachments().size(), stack);
+            for (int i = 0; i < createInfo.attachments().size(); i++) {
+                VulkanicAttachmentDescription attachment = createInfo.attachments().get(i);
+                pAttachments.get(i)
+                        .flags(attachment.flags().mask())
+                        .format(attachment.format().qualifier())
+                        .samples(attachment.samples().flag())
+                        .loadOp(attachment.loadOp().qualifier())
+                        .storeOp(attachment.storeOp().qualifier())
+                        .stencilLoadOp(attachment.stencilLoadOp().qualifier())
+                        .stencilStoreOp(attachment.stencilStoreOp().qualifier())
+                        .initialLayout(attachment.initialLayout().qualifier())
+                        .finalLayout(attachment.finalLayout().qualifier());
+            }
+            VkSubpassDescription.Buffer pSubpasses = VkSubpassDescription.calloc(createInfo.subpasses().size(), stack);
+            for (int i = 0; i < createInfo.subpasses().size(); i++) {
+                VulkanicSubpassDescription subpass = createInfo.subpasses().get(i);
+
+                VkAttachmentReference.Buffer pInputAttachments = VkAttachmentReference.calloc(subpass.inputAttachments().size(), stack);
+                for (int j = 0; j < subpass.inputAttachments().size(); j++) {
+                    pInputAttachments.get(j).set(subpass.inputAttachments().get(j).attachment(),subpass.inputAttachments().get(j).layout().qualifier());
+                }
+
+                VkAttachmentReference.Buffer pColorAttachments = VkAttachmentReference.calloc(subpass.colorAttachments().size(), stack);
+                for (int j = 0; j < subpass.colorAttachments().size(); j++) {
+                    pColorAttachments.get(j).set(subpass.colorAttachments().get(j).attachment(),subpass.colorAttachments().get(j).layout().qualifier());
+                }
+
+                VkAttachmentReference.Buffer pResolveAttachments;
+                if (subpass.resolveAttachments() != null) {
+                    pResolveAttachments = VkAttachmentReference.calloc(subpass.resolveAttachments().size(), stack);
+                    for (int j = 0; j < subpass.inputAttachments().size(); j++) {
+                        pResolveAttachments.get(j).set(subpass.resolveAttachments().get(j).attachment(), subpass.resolveAttachments().get(j).layout().qualifier());
+                    }
+                } else pResolveAttachments = null;
+
+                IntBuffer pPreserveAttachments = stack.callocInt(subpass.preserveAttachments().size());
+                for (int j = 0; j < subpass.preserveAttachments().size(); j++) {
+                    pPreserveAttachments.put(j, subpass.preserveAttachments().get(j));
+                }
+
+                pSubpasses.get(i)
+                        .flags(subpass.flags().mask())
+                        .pipelineBindPoint(subpass.pipelineBindPoint().qualifier())
+                        .pInputAttachments(pInputAttachments)
+                        .pColorAttachments(pColorAttachments)
+                        .pResolveAttachments(pResolveAttachments)
+                        .pDepthStencilAttachment(subpass.depthStencilAttachment() != null ? VkAttachmentReference.calloc(stack).set(subpass.depthStencilAttachment().attachment(), subpass.depthStencilAttachment().layout().qualifier()) : null)
+                        .pPreserveAttachments(pPreserveAttachments);
+            }
+
+            VkSubpassDependency.Buffer pDependencies = VkSubpassDependency.calloc(createInfo.dependencies().size(), stack);
+            for (int i = 0; i < createInfo.dependencies().size(); i++) {
+                VulkanicSubpassDependency dependency = createInfo.dependencies().get(i);
+                pDependencies.get(i)
+                        .srcSubpass(dependency.srcSubpass())
+                        .dstSubpass(dependency.dstSubpass())
+                        .srcStageMask(Math.toIntExact(dependency.srcStageMask().mask())) // NOTE: it is assumed that all flags in this mask are *legacy* flags and can be safely cast down to an int without side effects.
+                        .dstStageMask(Math.toIntExact(dependency.dstStageMask().mask()))
+                        .srcAccessMask(Math.toIntExact(dependency.srcAccessMask().mask()))
+                        .dstAccessMask(Math.toIntExact(dependency.dstAccessMask().mask()))
+                        .dependencyFlags(dependency.dependencyFlags().mask());
+            }
+
             LongBuffer pRenderPass = stack.callocLong(1);
-            VkUtil.check(VK10.vkCreateRenderPass(handle, createInfo, null, pRenderPass));
+            VkRenderPassCreateInfo pCreateInfo = VkRenderPassCreateInfo.calloc(stack)
+                    .sType$Default()
+                    .flags(createInfo.flags().mask())
+                    .pAttachments(pAttachments)
+                    .pSubpasses(pSubpasses)
+                    .pDependencies(pDependencies);
+
+            VkUtil.check(VK10.vkCreateRenderPass(this.handle, pCreateInfo, null, pRenderPass));
             return new VulkanicRenderPass(this, pRenderPass.get(0));
         }
     }

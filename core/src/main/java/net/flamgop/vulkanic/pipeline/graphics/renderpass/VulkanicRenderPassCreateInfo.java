@@ -10,5 +10,5 @@ public record VulkanicRenderPassCreateInfo(
         @NotNull List<VulkanicAttachmentDescription> attachments,
         @NotNull List<VulkanicSubpassDescription> subpasses,
         @NotNull List<VulkanicSubpassDependency> dependencies
-        ) {
+) {
 }

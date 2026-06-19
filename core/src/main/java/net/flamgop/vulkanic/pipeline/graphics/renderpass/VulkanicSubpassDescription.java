@@ -9,7 +9,7 @@ import java.util.List;
 
 /// @param flags is a bitset of {@link VulkanicSubpassDescriptionFlag} specifying the usage of the subpass
 /// @param pipelineBindPoint is a {@link VulkanicPipelineBindPoint} specifying the pipeline type supported for this subpass.
-/// @param inputAttachments is a list of {@link VulkanicAttachmentReference} objects defining the input attachemtns for this subpass and their layouts
+/// @param inputAttachments is a list of {@link VulkanicAttachmentReference} objects defining the input attachments for this subpass and their layouts
 /// @param colorAttachments is a list of {@link VulkanicAttachmentReference} objects defining the color attachments for this subpass and their layouts
 /// @param resolveAttachments is `null` or a list of {@link VulkanicAttachmentReference} objects defining the resolve attachments for this subpass and their layouts
 /// @param depthStencilAttachment is a {@link VulkanicAttachmentReference} object specifying the depth/stencil attachment for this subpass and its layout
