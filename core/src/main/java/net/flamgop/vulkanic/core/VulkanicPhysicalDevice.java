@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
+import net.flamgop.vulkanic.core.queue.VulkanicQueueFamilyProperties;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.VulkanicMemoryHeap;
 import net.flamgop.vulkanic.memory.VulkanicMemoryType;
@@ -12,6 +13,7 @@ import net.flamgop.vulkanic.memory.image.VulkanicImageTiling;
 import net.flamgop.vulkanic.memory.image.VulkanicImageType;
 import net.flamgop.vulkanic.memory.image.VulkanicImageUsageFlag;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
+import net.flamgop.vulkanic.surface.VulkanicSurfaceCapabilities;
 import net.flamgop.vulkanic.swapchain.VulkanicPresentMode;
 import net.flamgop.vulkanic.swapchain.VulkanicSurfaceTransformFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;

@@ -2,6 +2,10 @@ package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
+import net.flamgop.vulkanic.core.queue.VulkanicQueue;
+import net.flamgop.vulkanic.core.queue.VulkanicQueueCreateFlag;
+import net.flamgop.vulkanic.core.queue.VulkanicQueueFamily;
+import net.flamgop.vulkanic.core.queue.VulkanicQueueInfo;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
@@ -179,8 +183,9 @@ public final class VulkanicDevice implements AutoCloseable {
         return queueFamilies.get(index);
     }
 
+    /// __Do not use this.__
     @ApiStatus.Internal
-    @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
+    public @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pQueue = stack.callocPointer(1);
             VK11.vkGetDeviceQueue(this.handle, queueFamily.index(), queueIndex, pQueue);

@@ -1,5 +1,6 @@
-package net.flamgop.vulkanic.core;
+package net.flamgop.vulkanic.core.queue;
 
+import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,18 +27,22 @@ public final class VulkanicQueueFamily {
         this.isProtected = isProtected;
     }
 
+    /// @return this queue family's index
     public int index() {
         return index;
     }
 
+    /// @return the cached queue at the given index
     public VulkanicQueue queue(int index) {
         return queues.get(index);
     }
 
+    /// @return the amount of queues in this family
     public int count() {
         return queueCount;
     }
 
+    /// @return whether this queue family is protected
     public boolean isProtected() {
         return isProtected;
     }

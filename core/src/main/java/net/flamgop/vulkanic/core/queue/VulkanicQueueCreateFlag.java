@@ -1,11 +1,13 @@
-package net.flamgop.vulkanic.core;
+package net.flamgop.vulkanic.core.queue;
 
 import net.flamgop.vulkanic.util.Bitmaskable;
 import org.lwjgl.vulkan.KHRInternallySynchronizedQueues;
 import org.lwjgl.vulkan.VK11;
 
 public enum VulkanicQueueCreateFlag implements Bitmaskable<Integer> {
+    /// Marks this queue as protected
     PROTECTED(VK11.VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT),
+    /// Marks this queue as internally synchronized
     INTERNALLY_SYNCHRONIZED_KHR(KHRInternallySynchronizedQueues.VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR)
     ;
 

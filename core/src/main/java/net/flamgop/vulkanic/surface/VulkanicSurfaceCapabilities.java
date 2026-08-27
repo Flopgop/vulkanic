@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.core;
+package net.flamgop.vulkanic.surface;
 
 import net.flamgop.vulkanic.memory.image.VulkanicImageUsageFlag;
 import net.flamgop.vulkanic.swapchain.VulkanicCompositeAlphaFlag;
