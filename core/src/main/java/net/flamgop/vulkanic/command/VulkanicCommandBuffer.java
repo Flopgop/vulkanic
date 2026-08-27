@@ -44,16 +44,18 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
     private final VulkanicDevice device;
     private final VulkanicCommandPool pool;
     private final VkCommandBuffer handle;
+    private final VulkanicCommandBufferLevel level;
 
     /// @see VulkanicCommandPool#allocateCommandBuffer
     /// @see VulkanicCommandPool#allocateCommandBuffers
     /// @see VulkanicDevice#allocateCommandBuffer
     /// @see VulkanicDevice#allocateCommandBuffers
     @ApiStatus.Internal
-    public VulkanicCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VkCommandBuffer handle) {
+    public VulkanicCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VkCommandBuffer handle, @NotNull VulkanicCommandBufferLevel level) {
         this.device = pool.device();
         this.pool = pool;
         this.handle = handle;
+        this.level = level;
     }
 
     @Contract(mutates = "this", value = "_ -> !null")
@@ -348,8 +350,17 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
     }
 
     @Contract(mutates = "this")
-    public void executeCommands(PointerBuffer pCommandBuffers) {
-        vkCmdExecuteCommands(handle, pCommandBuffers);
+    public void executeCommands(@NotNull VulkanicCommandBuffer @NotNull ... commandBuffers) {
+        if (this.level() != VulkanicCommandBufferLevel.PRIMARY) throw new UnsupportedOperationException("VulkanicCommandBuffer#executeCommands may only be executed on PRIMARY command buffers!");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer pCommandBuffers = stack.callocPointer(commandBuffers.length);
+            for (int i = 0; i < commandBuffers.length; i++) {
+                if (commandBuffers[i].level() != VulkanicCommandBufferLevel.SECONDARY) throw new UnsupportedOperationException("VulkanicCommandBuffer#executeCommands may only accept SECONDARY command buffers!");
+                pCommandBuffers.put(i, commandBuffers[i].handle());
+            }
+
+            vkCmdExecuteCommands(handle, pCommandBuffers);
+        }
     }
 
     @SuppressWarnings("resource")
@@ -437,6 +448,22 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
             throw new UnsupportedOperationException("VulkanicCommandBuffer#drawMeshTasksEXT requires the meshShader device feature.");
         }
         EXTMeshShader.vkCmdDrawMeshTasksEXT(this.handle, groupCountX, groupCountY, groupCountZ);
+    }
+
+    @Contract(mutates = "this")
+    public void drawMeshTasksIndirectEXT(VulkanicBuffer buffer, VulkanicDeviceSize offset, int drawCount, int stride) {
+        if (!device.features().supportsMeshShader()) {
+            throw new UnsupportedOperationException("VulkanicCommandBuffer#drawMeshTasksIndirectEXT requires the meshShader device feature.");
+        }
+        EXTMeshShader.vkCmdDrawMeshTasksIndirectEXT(this.handle, buffer.handle(), offset.bytes(), drawCount, stride);
+    }
+
+    @Contract(mutates = "this")
+    public void drawMeshTasksIndirectCountEXT(VulkanicBuffer buffer, VulkanicDeviceSize offset, VulkanicBuffer countBuffer, VulkanicDeviceSize countBufferOffset, int maxDrawCount, int stride) {
+        if (!device.features().supportsMeshShader()) {
+            throw new UnsupportedOperationException("VulkanicCommandBuffer#drawMeshTasksIndirectCountEXT requires the meshShader device feature.");
+        }
+        EXTMeshShader.vkCmdDrawMeshTasksIndirectCountEXT(this.handle, buffer.handle(), offset.bytes(), countBuffer.handle(), countBufferOffset.bytes(), maxDrawCount, stride);
     }
 
     @Contract(mutates = "this")
@@ -622,6 +649,11 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
     @Contract(pure = true)
     public @NotNull VkCommandBuffer handle() {
         return handle;
+    }
+
+    @Contract(pure = true)
+    public @NotNull VulkanicCommandBufferLevel level() {
+        return level;
     }
 
     @Override

@@ -14,19 +14,21 @@ public final class VulkanicCommandPool implements AutoCloseable {
 
     private final VulkanicDevice device;
     private final long handle;
+    private final boolean isProtected;
 
     /// @see VulkanicDevice#createCommandPool
     @ApiStatus.Internal
-    public VulkanicCommandPool(@NotNull VulkanicDevice device, long handle) {
+    public VulkanicCommandPool(@NotNull VulkanicDevice device, long handle, boolean isProtected) {
         this.device = device;
         this.handle = handle;
+        this.isProtected = isProtected;
     }
 
     public @NotNull VulkanicDevice device() {
         return device;
     }
 
-    public int reset(EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
+    public @NotNull VulkanicResult reset(EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
         return device.resetCommandPool(this, flags);
     }
 
@@ -62,6 +64,11 @@ public final class VulkanicCommandPool implements AutoCloseable {
     @Contract(pure = true)
     public long handle() {
         return handle;
+    }
+
+    @Contract(pure = true)
+    public boolean isProtected() {
+        return isProtected;
     }
 
     @Override

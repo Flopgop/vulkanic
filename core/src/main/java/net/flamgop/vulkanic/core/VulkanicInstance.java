@@ -147,6 +147,7 @@ public final class VulkanicInstance implements AutoCloseable {
         }
     }
 
+    /// Enumerates all physical devices on the current device and returns them in a list.
     public @NotNull List<VulkanicPhysicalDevice> enumeratePhysicalDevices() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pCount = stack.callocInt(1);
@@ -162,20 +163,24 @@ public final class VulkanicInstance implements AutoCloseable {
         }
     }
 
+    /// Destroys a surface. See platform-specific surface implementations in the helpers module for how to create a surface. (note: you can also implement [VulkanicSurface] yourself and provide a special surface, but there are already GLFW and SDL surface providers in the helper module.)
     public void destroySurface(@NotNull VulkanicSurface surface) {
         KHRSurface.vkDestroySurfaceKHR(this.handle, surface.handle(), null);
     }
 
+    /// @return The exact application info this instance was created with.
     @Contract(pure = true)
     public @NotNull VulkanicApplicationInfo applicationInfo() {
         return applicationInfo;
     }
 
+    /// @return an unmodifiable view of the enabled layers for this instance.
     @Contract(pure = true)
     public @UnmodifiableView @NotNull List<String> enabledLayers() {
         return enabledLayers;
     }
 
+    /// @return an unmodifiable view of the enabled extensions for this instance.
     @Contract(pure = true)
     public @UnmodifiableView @NotNull List<String> enabledExtensions() {
         return enabledExtensions;

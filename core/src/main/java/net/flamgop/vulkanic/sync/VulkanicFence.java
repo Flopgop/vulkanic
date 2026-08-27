@@ -30,6 +30,10 @@ public final class VulkanicFence implements AutoCloseable {
         return device.fenceStatus(this);
     }
 
+    public boolean signaled() {
+        return status() == VulkanicResult.SUCCESS;
+    }
+
     public @NotNull VulkanicResult reset() {
         return device.resetFence(this);
     }

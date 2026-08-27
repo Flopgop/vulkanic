@@ -1,5 +1,7 @@
 package net.flamgop.vulkanic.core;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkApplicationInfo;
 
@@ -14,7 +16,8 @@ import org.lwjgl.vulkan.VkApplicationInfo;
 /// @see ApiVersion#VULKAN_1_3
 /// @see ApiVersion#VULKAN_1_4
 public record VulkanicApplicationInfo(String applicationName, ApiVersion applicationVersion, String engineName, ApiVersion engineVersion, ApiVersion apiVersion) {
-    public VkApplicationInfo calloc(MemoryStack stack) {
+    @Contract(mutates = "param1", value = "_ -> new")
+    public @NotNull VkApplicationInfo calloc(@NotNull MemoryStack stack) {
         return VkApplicationInfo.calloc(stack)
                 .pApplicationName(stack.UTF8(applicationName))
                 .applicationVersion(applicationVersion.version())

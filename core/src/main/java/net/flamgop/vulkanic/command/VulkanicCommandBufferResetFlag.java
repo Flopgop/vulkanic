@@ -4,6 +4,7 @@ import net.flamgop.vulkanic.util.Bitmaskable;
 import org.lwjgl.vulkan.VK10;
 
 public enum VulkanicCommandBufferResetFlag implements Bitmaskable<Integer> {
+    /// Releases resources associated with this command buffer. Ideal for single-use command buffers.
     RESET_RELEASE_RESOURCES(VK10.VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT)
     ;
 

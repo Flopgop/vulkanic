@@ -1,5 +1,6 @@
 package net.flamgop.vulkanic.core;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.vulkan.*;
 
@@ -20,6 +21,7 @@ public record ApiVersion(int variant, int major, int minor, int patch) {
         );
     }
 
+    @Contract(pure = true)
     public int version() {
         return VK10.VK_MAKE_API_VERSION(variant, major, minor, patch);
     }

@@ -12,16 +12,18 @@ public final class VulkanicQueueFamily {
 
     private final List<VulkanicQueue> queues;
     private final int queueCount;
+    private final boolean isProtected;
 
     /// @see VulkanicDevice#queueFamily
     @ApiStatus.Internal
-    public VulkanicQueueFamily(@NotNull VulkanicDevice device, int index, int queueCount) {
+    public VulkanicQueueFamily(@NotNull VulkanicDevice device, int index, int queueCount, boolean isProtected) {
         this.index = index;
         this.queues = new ArrayList<>(queueCount);
         for (int i = 0; i < queueCount; i++) {
             queues.add(device.queue(this, i));
         }
         this.queueCount = queueCount;
+        this.isProtected = isProtected;
     }
 
     public int index() {
@@ -34,5 +36,9 @@ public final class VulkanicQueueFamily {
 
     public int count() {
         return queueCount;
+    }
+
+    public boolean isProtected() {
+        return isProtected;
     }
 }

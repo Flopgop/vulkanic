@@ -63,7 +63,7 @@ public final class VulkanicDevice implements AutoCloseable {
         this.features = features;
         this.queueFamilies = new HashMap<>(queueInfos.size());
         for (VulkanicQueueInfo createInfo : queueInfos) {
-            queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
+            queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount(), createInfo.createFlags().contains(VulkanicQueueCreateFlag.PROTECTED)));
         }
         this.enabledExtensions = List.copyOf(extensions);
         this.enabledLayers = List.copyOf(layers);
@@ -137,7 +137,7 @@ public final class VulkanicDevice implements AutoCloseable {
 
             this.queueFamilies = new HashMap<>(queueCreateInfos.size());
             for (VulkanicQueueInfo createInfo : queueCreateInfos) {
-                queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount()));
+                queueFamilies.put(createInfo.queueFamilyIndex(), new VulkanicQueueFamily(this, createInfo.queueFamilyIndex(), createInfo.queueCount(), createInfo.createFlags().contains(VulkanicQueueCreateFlag.PROTECTED)));
             }
         }
     }
@@ -154,14 +154,19 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// This function uses [List#stream()] and an `anyMatch` call to check this, and as such is O(N)
+    /// @return Whether this device was configured with a specific extension on creation.
     public boolean supportsExtension(String extension) {
         return enabledExtensions.stream().anyMatch(extension::equals);
     }
 
+    /// @return The [VulkanicPhysicalDevice] this device was created with
     public @NotNull VulkanicPhysicalDevice physicalDevice() {
         return physicalDevice;
     }
 
+    /// @apiNote This structure may not contain all the features the device supports, but will always contain all the features requested as the constructor throws an error if otherwise.
+    /// @return The [VulkanicDeviceFeatures] this device was created with
     public @NotNull VulkanicDeviceFeatures features() {
         return features;
     }
@@ -183,6 +188,15 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a fence. Fences are generally used as a one-way signal flag from the GPU to the CPU. <p/>
+    /// If you plan on waiting on this fence before you do any work, consider creating it with [VulkanicFenceCreateFlag#SIGNALED] so your wait finishes immediately.
+    /// @param createFlags an [EnumIntBitset<VulkanicFenceCreateFlag>] of flags for this fence.
+    /// @return A fence, assuming the creation flags were valid and no driver error occurred.
+    /// @see VulkanicFence
+    /// @see waitForFence
+    /// @see resetFence
+    /// @see fenceStatus
+    /// @see destroyFence
     public @NotNull VulkanicFence createFence(EnumIntBitset<VulkanicFenceCreateFlag> createFlags) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkFenceCreateInfo createInfo = VkFenceCreateInfo.calloc(stack)
@@ -195,33 +209,56 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a given fence
+    /// @see VulkanicFence
+    /// @see createFence
     public void destroyFence(@NotNull VulkanicFence fence) {
         VK11.vkDestroyFence(this.handle, fence.handle(), null);
     }
 
+    /// Resets a given fence, changing its status from SIGNALED to UNSIGNALED. This will not fail if the fence is already unsignaled.<p/>
+    /// Use [resetFences] to reset multiple fences at once.
+    /// @see VulkanicFence
+    /// @see resetFences
+    /// @see fenceStatus
     public @NotNull VulkanicResult resetFence(@NotNull VulkanicFence fence) {
         return VulkanicResult.valueOf(VK11.vkResetFences(this.handle, fence.handle()));
     }
 
-    public int resetFences(@NotNull VulkanicFence... fences) {
+    /// Resets several fences, changing their statuses from SIGNALED to UNSIGNALED. This will not fail if any of the fences are unsignaled.<p/>
+    /// Use [resetFence] to reset a single fence, this method does a bit of extra work to reset multiple.
+    /// @see VulkanicFence
+    /// @see resetFence
+    /// @see fenceStatus
+    public @NotNull VulkanicResult resetFences(@NotNull VulkanicFence... fences) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pFences = stack.callocLong(fences.length);
             for (VulkanicFence fence : fences) {
                 pFences.put(fence.handle());
             }
             pFences.flip();
-            return VK11.vkResetFences(this.handle, pFences);
+            return VulkanicResult.valueOf(VK11.vkResetFences(this.handle, pFences));
         }
     }
 
+    /// Queries a fences status.
+    /// @return [VulkanicResult#SUCCESS] if the fence is signaled, [VulkanicResult#NOT_READY] if the fence is not signaled, [VulkanicResult#ERROR_DEVICE_LOST] if the device was lost.
+    /// @see VulkanicFence
     public @NotNull VulkanicResult fenceStatus(@NotNull VulkanicFence fence) {
         return VulkanicResult.valueOf(VK11.vkGetFenceStatus(this.handle, fence.handle()));
     }
 
+
+    /// Synchronously waits for a fence, this blocks until the fence is complete, or `timeout` expires.
+    /// @return [VulkanicResult#TIMEOUT] if `timeout` is zero, or if the fence is not signaled before `timeout` expires, otherwise [VulkanicResult#SUCCESS].
     public @NotNull VulkanicResult waitForFence(@NotNull VulkanicFence fence, @NotNull Duration timeout) {
         return VulkanicResult.valueOf(VK11.vkWaitForFences(this.handle, fence.handle(), true, timeout.toNanos()));
     }
 
+    /// Synchronously waits for several fences. <p/>
+    /// If `waitAll` is true, this will block until all fences are complete or until `timeout` expires.
+    /// If `waitAll` is false, this will block until any fence is complete or until `timeout` expires.
+    /// @return [VulkanicResult#TIMEOUT] if `timeout` is zero, or if the fence is not signaled before `timeout` expires, otherwise [VulkanicResult#SUCCESS].
     public @NotNull VulkanicResult waitForFences(@NotNull Duration timeout, boolean waitAll, @NotNull VulkanicFence... fences) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pFences = stack.callocLong(fences.length);
@@ -233,14 +270,26 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a semaphore. A semaphore is generally used as a signal passed strictly within the GPU.
+    /// These are used for synchronization within the GPU. [VulkanicSemaphoreType#BINARY] semaphores automatically reset when consumed.
+    /// [VulkanicSemaphoreType#TIMELINE] semaphores are incremented whenever the GPU executes a signal operation or whenever [#signalSemaphore] is called.
+    /// Additionally, timeline semaphores may only ever increase; they cannot be reset.
+    /// @param type semaphore type, either [VulkanicSemaphoreType#BINARY] or [VulkanicSemaphoreType#TIMELINE]
+    /// @param initialValue only makes sense in version 1.2 and for [VulkanicSemaphoreType#TIMELINE], otherwise must be 0.
+    /// @see VulkanicSemaphore
+    /// @see signalSemaphore
+    /// @see destroySemaphore
     public @NotNull VulkanicSemaphore createSemaphore(@NotNull VulkanicSemaphoreType type, long initialValue) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSemaphoreCreateInfo createInfo = VkSemaphoreCreateInfo.calloc(stack)
-                    .pNext(VkSemaphoreTypeCreateInfo.calloc(stack)
-                            .semaphoreType(type.qualifier())
-                            .initialValue(initialValue)
-                            .sType$Default())
                     .sType$Default();
+
+            if (this.instance.applicationInfo().apiVersion().version() >= ApiVersion.VULKAN_1_2.version() || this.enabledExtensions.contains(KHRTimelineSemaphore.VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
+                createInfo.pNext(VkSemaphoreTypeCreateInfo.calloc(stack)
+                        .semaphoreType(type.qualifier())
+                        .initialValue(initialValue)
+                        .sType$Default());
+            }
 
             LongBuffer pSemaphore = stack.callocLong(1);
             VkUtil.check(VK11.vkCreateSemaphore(this.handle, createInfo, null, pSemaphore));
@@ -248,10 +297,31 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Signals (by incrementing) a semaphore with a certain value. This is only valid for timeline semaphores.
+    /// This requires Vulkan API 1.2 or VK_KHR_TIMELINE_SEMAPHORE
+    /// @see VulkanicSemaphore
+    public @NotNull VulkanicResult signalSemaphore(@NotNull VulkanicSemaphore semaphore, long value) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkSemaphoreSignalInfo signalInfo = VkSemaphoreSignalInfo.calloc(stack)
+                    .sType$Default()
+                    .semaphore(semaphore.handle())
+                    .value(value);
+
+            return VulkanicResult.valueOf(VK12.vkSignalSemaphore(this.handle, signalInfo));
+        }
+    }
+
+    /// Destroys a semaphore
+    /// @see VulkanicSemaphore
+    /// @see createSemaphore
     public void destroySemaphore(@NotNull VulkanicSemaphore semaphore) {
         VK11.vkDestroySemaphore(this.handle, semaphore.handle(), null);
     }
 
+    /// Creates a command pool for a given queue family. This object allows you to create [VulkanicCommandBuffer]s, and can only be executed on queues of the given family.
+    /// @param flags see [VulkanicCommandPoolCreateFlag]
+    /// @param queueFamily the [VulkanicQueueFamily] this command pool belongs to. If this pool is protected, the queue family must also be protected.
+    /// @see VulkanicCommandPool
     public @NotNull VulkanicCommandPool createCommandPool(
             EnumIntBitset<VulkanicCommandPoolCreateFlag> flags,
             VulkanicQueueFamily queueFamily
@@ -263,18 +333,30 @@ public final class VulkanicDevice implements AutoCloseable {
                     .queueFamilyIndex(queueFamily.index());
             LongBuffer pCommandPool = stack.callocLong(1);
             VkUtil.check(VK11.vkCreateCommandPool(this.handle, createInfo, null, pCommandPool));
-            return new VulkanicCommandPool(this, pCommandPool.get(0));
+            return new VulkanicCommandPool(this, pCommandPool.get(0), flags.contains(VulkanicCommandPoolCreateFlag.PROTECTED));
         }
     }
 
+    /// Destroys a command pool
+    /// @see VulkanicCommandPool
+    /// @see createCommandPool
     public void destroyCommandPool(@NotNull VulkanicCommandPool commandPool) {
         VK11.vkDestroyCommandPool(this.handle, commandPool.handle(), null);
     }
 
-    public int resetCommandPool(@NotNull VulkanicCommandPool commandPool, @NotNull EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
-        return VK11.vkResetCommandPool(this.handle, commandPool.handle(), flags.mask());
+    /// Resets a given command pool
+    /// @see VulkanicCommandPool
+    public @NotNull VulkanicResult resetCommandPool(@NotNull VulkanicCommandPool commandPool, @NotNull EnumIntBitset<VulkanicCommandPoolResetFlag> flags) {
+        return VulkanicResult.valueOf(VK11.vkResetCommandPool(this.handle, commandPool.handle(), flags.mask()));
     }
 
+    /// Allocates a command buffer from a pool. This will inherit some properties from the pool, such as the protected bit.
+    ///
+    /// Secondary command buffers may be used in parallelism workloads, i.e., two threads may simultaneously record different geometry into different (secondary) command buffers, which then would be submitted to [VulkanicCommandBuffer#executeCommands] on a primary command buffer to be more efficient with command recording.
+    ///
+    /// Secondary command buffers may also be used to record static geometry and then be stored to be re-executed in multiple frames, to avoid re-recording the same draw calls every frame.
+    /// @param level [VulkanicCommandBufferLevel#PRIMARY] if this is intended to be executed on a queue, [VulkanicCommandBufferLevel#SECONDARY] if this is intended to be executed only within other command buffers.
+    /// @see VulkanicCommandBuffer
     public @NotNull VulkanicCommandBuffer allocateCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandBufferAllocateInfo pAllocateInfo = VkCommandBufferAllocateInfo.calloc(stack)
@@ -284,10 +366,17 @@ public final class VulkanicDevice implements AutoCloseable {
                     .commandBufferCount(1);
             PointerBuffer pCommandBuffers = stack.callocPointer(1);
             VkUtil.check(VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers));
-            return new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(0), this.handle));
+            return new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(0), this.handle), level);
         }
     }
 
+    /// Allocates multiple command buffers. These will inherit some properties from the pool, such as the protected bit.
+    ///
+    /// Secondary command buffers may be used in parallelism workloads, i.e., two threads may simultaneously record different geometry into different (secondary) command buffers, which then would be submitted to [VulkanicCommandBuffer#executeCommands] on a primary command buffer to be more efficient with command recording.
+    ///
+    /// Secondary command buffers may also be used to record static geometry and then be stored to be re-executed in multiple frames, to avoid re-recording the same draw calls every frame.
+    /// @param level [VulkanicCommandBufferLevel#PRIMARY] if this is intended to be executed on a queue, [VulkanicCommandBufferLevel#SECONDARY] if this is intended to be executed only within other command buffers.
+    /// @see VulkanicCommandBuffer
     public @NotNull VulkanicCommandBuffer[] allocateCommandBuffers(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBufferLevel level, int count) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandBufferAllocateInfo pAllocateInfo = VkCommandBufferAllocateInfo.calloc(stack)
@@ -298,15 +387,19 @@ public final class VulkanicDevice implements AutoCloseable {
             PointerBuffer pCommandBuffers = stack.callocPointer(count);
             VkUtil.check(VK11.vkAllocateCommandBuffers(this.handle, pAllocateInfo, pCommandBuffers));
             VulkanicCommandBuffer[] commandBuffers = new VulkanicCommandBuffer[count];
-            for (int i = 0; i < count; i++) commandBuffers[i] = new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(i), this.handle));
+            for (int i = 0; i < count; i++) commandBuffers[i] = new VulkanicCommandBuffer(pool, new VkCommandBuffer(pCommandBuffers.get(i), this.handle), level);
             return commandBuffers;
         }
     }
 
+    /// Free a command buffer.
+    /// @see VulkanicCommandBuffer
     public void freeCommandBuffer(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBuffer commandBuffer) {
         VK11.vkFreeCommandBuffers(this.handle, pool.handle(), commandBuffer.handle());
     }
 
+    /// Free multiple command buffers.
+    /// @see VulkanicCommandBuffer
     public void freeCommandBuffers(@NotNull VulkanicCommandPool pool, @NotNull VulkanicCommandBuffer... commandBuffers) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pCommandBuffers = stack.callocPointer(commandBuffers.length);
@@ -318,6 +411,10 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Begins a command buffer.
+    /// @apiNote VulkanicCommandBuffers do not track whether they have begun or not, to preserve java-side immutability guarantees
+    /// @param beginInfo see [VulkanicCommandBufferBeginInfo]
+    /// @see VulkanicCommandBuffer
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult beginCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull VulkanicCommandBufferBeginInfo beginInfo) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -340,14 +437,22 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Ends a command buffer.
+    /// @see VulkanicCommandBuffer
     public @NotNull VulkanicResult endCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer) {
         return VulkanicResult.valueOf(VK11.vkEndCommandBuffer(commandBuffer.handle()));
     }
 
+    /// Resets a command buffer.
+    /// @apiNote This is only valid on command buffers created from a pool with the RESET_COMMAND_BUFFER flag.
+    /// @param flags see [VulkanicCommandBufferResetFlag]
+    /// @see VulkanicCommandBuffer
     public @NotNull VulkanicResult resetCommandBuffer(@NotNull VulkanicCommandBuffer commandBuffer, @NotNull EnumIntBitset<VulkanicCommandBufferResetFlag> flags) {
         return VulkanicResult.valueOf(VK11.vkResetCommandBuffer(commandBuffer.handle(), flags.mask()));
     }
 
+    /// Creates a view for an image. This is just a way the GPU knows how to read an image.
+    /// @see VulkanicImageView
     public @NotNull VulkanicImageView createImageView(@NotNull VulkanicImage image, @NotNull VulkanicImageViewCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pImageView = stack.callocLong(1);
@@ -372,10 +477,15 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys an image view.
+    /// @see VulkanicImageView
+    /// @see createImageView
     public void destroyImageView(@NotNull VulkanicImageView imageView) {
         VK11.vkDestroyImageView(this.handle, imageView.handle(), null);
     }
 
+    /// Creates a shader module from a byte array of SPIR-V code, compiled with your favorite shader compiler.
+    /// @see VulkanicShaderModule
     public @NotNull VulkanicShaderModule createShaderModule(byte @NotNull [] code) throws VulkanException {
         ByteBuffer pCode = MemoryUtil.memAlloc(code.length);
         try {
@@ -386,6 +496,8 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a shader module from a ByteBuffer of SPIR-V code, compiled with your favorite shader compiler.
+    /// @see VulkanicShaderModule
     public @NotNull VulkanicShaderModule createShaderModule(@NotNull ByteBuffer pCode) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pShaderModule = stack.callocLong(1);
@@ -396,22 +508,17 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a shader module.
+    /// @see VulkanicShaderModule
     public void destroyShaderModule(@NotNull VulkanicShaderModule module) {
         VK10.vkDestroyShaderModule(handle, module.handle(), null);
     }
 
-    @Deprecated(forRemoval = true)
-    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull VkPipelineLayoutCreateInfo createInfo) throws VulkanException {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            LongBuffer pPipelineLayout = stack.callocLong(1);
-            VkUtil.check(VK10.vkCreatePipelineLayout(handle, createInfo, null, pPipelineLayout));
-            VkPushConstantRange.Buffer pushConstantRanges = createInfo.pPushConstantRanges();
-            return new VulkanicPipelineLayout(this, pPipelineLayout.get(0), pushConstantRanges != null && pushConstantRanges.capacity() > 0 ? pushConstantRanges.get(0).size() : 0);
-        }
-    }
-
+    /// Creates a pipeline layout. A pipeline layout defines the general inputs of a given pipeline. Multiple pipelines may share the same layout.
+    /// Note: Push constants have a maximum size, see [VulkanicPhysicalDevice#properties()] to find said limit.
+    /// @see VulkanicPipelineLayout
     @SuppressWarnings("resource")
-    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts, @NotNull List<@NotNull VulkanicPushConstantRange> pushConstantRanges) throws VulkanException {
+    public @NotNull VulkanicPipelineLayout createPipelineLayout(@NotNull EnumIntBitset<VulkanicPipelineLayoutCreateFlag> createFlags, @NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts, @NotNull List<@NotNull VulkanicPushConstantRange> pushConstantRanges) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPushConstantRange.Buffer pPushConstantRanges = VkPushConstantRange.calloc(pushConstantRanges.size(), stack);
             for (int i = 0; i < pushConstantRanges.size(); i++) {
@@ -429,6 +536,7 @@ public final class VulkanicDevice implements AutoCloseable {
 
             VkPipelineLayoutCreateInfo createInfo = VkPipelineLayoutCreateInfo.calloc(stack)
                     .sType$Default()
+                    .flags(createFlags.mask())
                     .pPushConstantRanges(pPushConstantRanges)
                     .pSetLayouts(pSetLayouts)
                     .setLayoutCount(setLayouts.size());
@@ -439,10 +547,15 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a pipeline layout
+    /// @see VulkanicPipelineLayout
+    /// @see createPipelineLayout
     public void destroyPipelineLayout(@NotNull VulkanicPipelineLayout layout) {
         VK10.vkDestroyPipelineLayout(handle, layout.handle(), null);
     }
 
+    /// Creates a descriptor set layout. This is necessary for determining the shape of each descriptor pool.
+    /// @see VulkanicDescriptorSetLayout
     @SuppressWarnings("resource")
     public @NotNull VulkanicDescriptorSetLayout createDescriptorSetLayout(@NotNull EnumIntBitset<VulkanicDescriptorSetLayoutCreateFlag> flags, @NotNull List<@NotNull VulkanicDescriptorSetLayoutBinding> bindings) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -473,10 +586,15 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a descriptor set layout
+    /// @see VulkanicDescriptorSetLayout
+    /// @see createDescriptorSetLayout
     public void destroyDescriptorSetLayout(@NotNull VulkanicDescriptorSetLayout descriptorSetLayout) {
         VK10.vkDestroyDescriptorSetLayout(handle, descriptorSetLayout.handle(), null);
     }
 
+    /// Executes a list of descriptor set updates. This can involve writing to or copying between several descriptor sets.
+    /// Ideally, you should batch all of your writes and copies together and execute them all at once
     @SuppressWarnings("resource")
     public void updateDescriptorSet(@NotNull List<@NotNull VulkanicUpdateDescriptorSet> updates) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -548,8 +666,12 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a descriptor pool.
+    /// A descriptor pool is where descriptor sets are allocated from, and dictates the maximum amount of resources allowed to be dedicated to those sets.
+    /// Multiple unique sets (with unique layouts) can be allocated from one descriptor pool, provided the descriptor pool has enough space for them.
+    /// @see VulkanicDescriptorPool
     @SuppressWarnings("resource")
-    public @NotNull VulkanicDescriptorPool createDescriptorPool(VulkanicDescriptorPoolCreateInfo createInfo) throws VulkanException {
+    public @NotNull VulkanicDescriptorPool createDescriptorPool(@NotNull VulkanicDescriptorPoolCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDescriptorPoolSize.Buffer pPoolSizes = VkDescriptorPoolSize.calloc(createInfo.poolSizes().size(), stack);
             for (int i = 0; i < createInfo.poolSizes().size(); i++) {
@@ -570,14 +692,22 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a descriptor pool and frees all sets allocated from it.
+    /// @see VulkanicDescriptorPool
+    /// @see createDescriptorPool
     public void destroyDescriptorPool(@NotNull VulkanicDescriptorPool descriptorPool) {
         VK10.vkDestroyDescriptorPool(handle, descriptorPool.handle(), null);
     }
 
+    /// Resets a descriptor pool and frees all sets allocated from it.
+    /// @see VulkanicDescriptorPool
     public void resetDescriptorPool(@NotNull VulkanicDescriptorPool pool, @NotNull EnumIntBitset<VulkanicDescriptorPoolResetFlag> flags) throws VulkanException {
         VkUtil.check(VK10.vkResetDescriptorPool(this.handle, pool.handle(), flags.mask()));
     }
 
+    /// Allocates descriptor sets from a descriptor pool.
+    /// Prefer [VulkanicDescriptorPool#allocate]
+    /// @see VulkanicDescriptorPool
     public @NotNull VulkanicDescriptorSet[] allocateDescriptorSets(@NotNull VulkanicDescriptorPool pool, @NotNull List<@NotNull VulkanicDescriptorSetLayout> setLayouts) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pSetLayouts = stack.callocLong(setLayouts.size());
@@ -600,6 +730,9 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Frees descriptor sets. Descriptor pool must be created with the FREE_DESCRIPTOR_SET flag.
+    /// Prefer [VulkanicDescriptorPool#free]
+    /// @see VulkanicDescriptorPool
     public void freeDescriptorSets(@NotNull VulkanicDescriptorPool pool, @NotNull VulkanicDescriptorSet... descriptorSets) {
         if (!pool.createInfo().flags().contains(VulkanicDescriptorPoolCreateFlag.FREE_DESCRIPTOR_SET)) throw new IllegalStateException("Freeing a descriptor set on a pool requires the pool to have been created with the free descriptor set flag.");
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -612,6 +745,9 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a framebuffer. Framebuffers are write targets for the old Vulkan rendering style (i.e., using [VulkanicRenderPass]).
+    /// Prefer Vulkan 1.2 dynamic rendering, or VK_KHR_dynamic_rendering
+    /// @see VulkanicFramebuffer
     @SuppressWarnings("resource")
     public @NotNull VulkanicFramebuffer createFramebuffer(@NotNull VulkanicFramebufferCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -637,10 +773,15 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a framebuffer.
+    /// @see VulkanicFramebuffer
     public void destroyFramebuffer(@NotNull VulkanicFramebuffer framebuffer) {
         VK10.vkDestroyFramebuffer(handle, framebuffer.handle(), null);
     }
 
+    /// Creates a render pass. These define rendering information like targets, subpasses, and dependencies. This is outdated and should only be used on legacy Vulkan (1.0)
+    /// Prefer Vulkan 1.2 dynamic rendering, or VK_KHR_dynamic_rendering
+    /// @see VulkanicRenderPass
     @SuppressWarnings("resource")
     public @NotNull VulkanicRenderPass createRenderPass(@NotNull VulkanicRenderPassCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -721,10 +862,16 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a render pass.
+    /// @see VulkanicRenderPass
     public void destroyRenderPass(@NotNull VulkanicRenderPass renderPass) {
         VK10.vkDestroyRenderPass(this.handle, renderPass.handle(), null);
     }
 
+    /// Creates a compute pipeline.
+    /// Compute pipelines generally operate on data directly and are invoked via [VulkanicCommandBuffer#dispatch] or [VulkanicCommandBuffer#dispatchIndirect] (after binding with [VulkanicCommandBuffer#bindPipeline])
+    /// Good for transforming data, analysis, or other computing things.
+    /// @see VulkanicComputePipeline
     public @NotNull VulkanicComputePipeline createComputePipeline(@NotNull VulkanicComputePipelineCreateInfo createInfo, @Nullable VulkanicPipelineCache pipelineCache) throws VulkanException {
         createInfo.validate(features);
 
@@ -739,6 +886,18 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a graphics pipeline.
+    /// Graphic pipelines generally render something to the screen with primitives.
+    /// After being bound with [VulkanicCommandBuffer#bindPipeline], how they are invoked depends on the method of rendering used.
+    /// With standard raster rendering, one can use any of:
+    /// - [VulkanicCommandBuffer#draw]
+    /// - [VulkanicCommandBuffer#drawIndexed]
+    /// - [VulkanicCommandBuffer#drawIndexedIndirect]
+    ///
+    /// With mesh shading, one can use any of:
+    /// - [VulkanicCommandBuffer#drawMeshTasksEXT]
+    /// - [VulkanicCommandBuffer#drawMeshTasksIndirectEXT]
+    /// - [VulkanicCommandBuffer#drawMeshTasksIndirectCountEXT]
     public @NotNull VulkanicGraphicsPipeline createGraphicsPipeline(
             @NotNull VulkanicGraphicsPipelineCreateInfo createInfo,
             @Nullable VulkanicPipelineCache pipelineCache
@@ -757,18 +916,30 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a graphics pipeline builder designed to be used with render passes.
+    ///
+    /// For dynamic rendering:
+    /// @see createGraphicsPipelineBuilder(VulkanicPipelineLayout, VulkanicPipelineRenderingInfo)
+    /// @see createGraphicsPipeline
     public @NotNull VulkanicGraphicsPipelineBuilder createGraphicsPipelineBuilder(@NotNull VulkanicPipelineLayout layout, @NotNull VulkanicRenderPass renderPass) {
         return new VulkanicGraphicsPipelineBuilder(this, layout, renderPass);
     }
 
+    /// Creates a graphics pipeline builder
+    /// @see createGraphicsPipeline
     public @NotNull VulkanicGraphicsPipelineBuilder createGraphicsPipelineBuilder(@NotNull VulkanicPipelineLayout layout, @NotNull VulkanicPipelineRenderingInfo renderingInfo) {
         return new VulkanicGraphicsPipelineBuilder(this, layout, renderingInfo);
     }
 
+    /// Destroy a pipeline.
     public void destroyPipeline(@NotNull VulkanicPipeline pipeline) {
         VK10.vkDestroyPipeline(handle, pipeline.handle(), null);
     }
 
+    /// Create a Vulkan swapchain.
+    /// Swapchains handle presentation in a cross-platform way.
+    /// Certain platform-dependant solutions to presentation exist as well and sometimes provide better results.
+    /// @see VulkanicSwapchain
     @SuppressWarnings("resource")
     public @NotNull VulkanicSwapchain createSwapchain(
             @NotNull VulkanicSwapchainCreateInfo createInfo
@@ -800,10 +971,17 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a swapchain.
+    /// @see VulkanicSwapchain
+    /// @see createSwapchain
     public void destroySwapchain(@NotNull VulkanicSwapchain swapchain) {
         KHRSwapchain.vkDestroySwapchainKHR(this.handle, swapchain.handle(), null);
     }
 
+    /// Creates a sampler.
+    /// Samplers tell the GPU how to sample information from a texture.
+    /// This handles things like anisotropy, mipmaps, and filtering.
+    /// @see VulkanicSampler
     public @NotNull VulkanicSampler createSampler(VulkanicSamplerCreateInfo createInfo) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSamplerCreateInfo pCreateInfo = VkSamplerCreateInfo.calloc(stack)
@@ -825,11 +1003,17 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a sampler.
+    /// @see VulkanicSampler
+    /// @see createSampler
     public void destroySampler(@NotNull VulkanicSampler sampler) {
         VK10.vkDestroySampler(this.handle, sampler.handle(), null);
     }
 
-    public @NotNull VulkanicQueryPool createQueryPool(EnumIntBitset<VulkanicQueryPoolCreateFlag> flags, VulkanicQueryType type, int queryCount, EnumIntBitset<VulkanicQueryPipelineStatisticFlag> pipelineStatistics) throws VulkanException {
+    /// Creates a query pool.
+    /// Query pools are pools for query objects, which allow you to measure various things about your program and the GPU, such as invocations of various shader programs.
+    /// @see VulkanicQueryPool
+    public @NotNull VulkanicQueryPool createQueryPool(@NotNull EnumIntBitset<VulkanicQueryPoolCreateFlag> flags, @NotNull VulkanicQueryType type, int queryCount, @NotNull EnumIntBitset<VulkanicQueryPipelineStatisticFlag> pipelineStatistics) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pQueryPool = stack.callocLong(1);
             VkQueryPoolCreateInfo pQueryPoolCreateInfo = VkQueryPoolCreateInfo.calloc(stack)
@@ -844,14 +1028,24 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a query pool.
+    /// @see VulkanicQueryPool
+    /// @see createQueryPool
     public void destroyQueryPool(@NotNull VulkanicQueryPool pool) {
         VK10.vkDestroyQueryPool(this.handle, pool.handle(), null);
     }
 
+    /// Requests query pool results to be copied to host memory.
+    ///
+    /// See [VulkanicCommandBuffer#copyQueryPoolResults] for more control over copying.
+    /// @see VulkanicQueryPool
     public @NotNull VulkanicResult getQueryPoolResults(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount, @NotNull ByteBuffer pData, long stride, @NotNull EnumIntBitset<VulkanicQueryResultFlag> flags) {
         return VulkanicResult.valueOf(VK10.vkGetQueryPoolResults(this.handle, queryPool.handle(), firstQuery, queryCount, pData, stride, flags.mask()));
     }
 
+    /// Resets a query pool.
+    /// If the hostQueryReset feature is available, this can be called to reset queries. Otherwise, see [VulkanicCommandBuffer#resetQueryPool]
+    /// @see VulkanicQueryPool
     public void resetQueryPool(@NotNull VulkanicQueryPool queryPool, int firstQuery, int queryCount) {
         if (!features.supportsHostQueryReset()) {
             throw new UnsupportedOperationException("VulkanicDevice#resetQueryPool requires either Vulkan 1.2 or EXTHostQueryReset and the hostQueryReset feature set.");
@@ -864,6 +1058,7 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Writes descriptor heap resources.
     /// @apiNote Tensor resource descriptors are not currently supported
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult writeResourceDescriptors(List<VulkanicResourceDescriptorInfo> resources, List<ByteBuffer> descriptors) {
@@ -917,6 +1112,7 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Writes descriptor heap samplers.
     @SuppressWarnings("resource")
     public @NotNull VulkanicResult writeSamplerDescriptors(List<VulkanicSamplerCreateInfo> samplers, List<ByteBuffer> descriptors) {
         if (!features.supportsDescriptorHeap()) {
@@ -939,6 +1135,7 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Captures the image opaque capture descriptor data for a descriptor heap replay.
     @SuppressWarnings({"resource", "SpellCheckingInspection"})
     public @NotNull VulkanicResult getImageOpaqueCaptureData(List<VulkanicImage> images, List<VulkanicHostAddressRange> datas) {
         if (!features.supportsDescriptorHeapCaptureReplay()) {
@@ -961,10 +1158,19 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    public @NotNull VulkanicDeviceSize getPhysicalDeviceDescriptorSize(VulkanicDescriptorType type) {
+    /// Queries the size of a given descriptor type from the GPU. Only necessary for descriptor heaps.
+    public @NotNull VulkanicDeviceSize getPhysicalDeviceDescriptorSize(@NotNull VulkanicDescriptorType type) {
+        if (!features.supportsDescriptorHeap()) {
+            throw new UnsupportedOperationException("VulkanicDevice#getPhysicalDeviceDescriptorSize requires the descriptorHeap feature.");
+        }
+
         return VulkanicDeviceSize.ofBytes(EXTDescriptorHeap.vkGetPhysicalDeviceDescriptorSizeEXT(this.physicalDevice.handle(), type.qualifier()));
     }
 
+    /// Creates a pipeline cache from initial data (or an empty one if initialData is null).
+    /// This can be used to speed up pipeline compilation times for subsequent application starts.
+    /// Note: pipeline caches are device-specific, they cannot be simply transferred between devices and should not be shipped.
+    /// @see VulkanicPipelineCache
     public @NotNull VulkanicPipelineCache createPipelineCache(@NotNull EnumIntBitset<VulkanicPipelineCacheCreateFlag> flags, @Nullable ByteBuffer initialData) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPipelineCacheCreateInfo createInfo = VkPipelineCacheCreateInfo.calloc(stack)
@@ -979,16 +1185,23 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Destroys a pipeline cache
+    /// @see VulkanicPipelineCache
     public void destroyPipelineCache(@NotNull VulkanicPipelineCache cache) {
         VK10.vkDestroyPipelineCache(this.handle, cache.handle(), null);
     }
 
+    /// Merges several source caches into a single destination cache.
+    /// @see VulkanicPipelineCache
     public @NotNull VulkanicResult mergePipelineCaches(@NotNull VulkanicPipelineCache dstCache, @NotNull List<VulkanicPipelineCache> srcCaches) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             return VulkanicResult.valueOf(VK10.vkMergePipelineCaches(this.handle, dstCache.handle(), stack.longs(srcCaches.stream().mapToLong(VulkanicPipelineCache::handle).toArray())));
         }
     }
 
+    /// Queries the size of the data contained within a pipeline cache (for pre-allocation when saving.)
+    /// @see VulkanicPipelineCache
+    /// @see getPipelineCacheData
     public long getPipelineCacheDataSize(@NotNull VulkanicPipelineCache cache) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pDataSize = stack.callocPointer(1);
@@ -997,7 +1210,9 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
-    //
+    /// Copies the data from the pipeline cache into the given [ByteBuffer].
+    /// The given buffer must be large enough to contain the data, see [#getPipelineCacheDataSize]
+    /// @see VulkanicPipelineCache
     @Contract(mutates = "param2", value = "_, _ -> _")
     public @NotNull VulkanicResult getPipelineCacheData(@NotNull VulkanicPipelineCache cache, @NotNull ByteBuffer buffer) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -1007,6 +1222,9 @@ public final class VulkanicDevice implements AutoCloseable {
     }
 
     // TODO: deferred operation
+    /// Creates a ray tracing pipeline.
+    /// Note: this API isn't really finished.
+    @ApiStatus.Experimental
     public @NotNull VulkanicRayTracingPipeline createRayTracingPipeline(
             @NotNull VulkanicRayTracingPipelineCreateInfo createInfo,
             @Nullable VulkanicPipelineCache cache
@@ -1024,6 +1242,7 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates, records, and submits a transient command buffer then returns a CompletableFuture that completes when the fence returned by the submission is finished.
     public @NotNull CompletableFuture<Void> submitTransient(
             @NotNull VulkanicCommandPool pool,
             @NotNull VulkanicQueue queue,
@@ -1078,11 +1297,13 @@ public final class VulkanicDevice implements AutoCloseable {
         }
     }
 
+    /// Creates a transient command pool then calls [#submitTransient(VulkanicCommandPool, VulkanicQueue, Consumer)]
     public @NotNull CompletableFuture<Void> submitTransient(@NotNull VulkanicQueue queue, @NotNull Consumer<VulkanicCommandBuffer> usage) throws VulkanException {
         VulkanicCommandPool pool = createCommandPool(EnumIntBitset.of(VulkanicCommandPoolCreateFlag.TRANSIENT), queue.family());
         return submitTransient(pool, queue, usage).whenComplete((_,_) -> pool.close());
     }
 
+    /// Waits until this device is fully idle (no tasks pending completion)
     @SuppressWarnings("UnusedReturnValue")
     public @NotNull VulkanicResult waitIdle() {
         return VulkanicResult.valueOf(VK11.vkDeviceWaitIdle(this.handle));
