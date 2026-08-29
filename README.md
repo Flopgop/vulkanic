@@ -28,6 +28,13 @@ This library is usable but is probably filled with mysterious bugs no one's ever
 - proper testing
 - maybe swap LWJGL for a more abstract Vulkan library (e.g., for better android support)
 
+## Helpers
+This library contains several helpers that are related to Vulkan but not everyone might need:
+- [SDL](/helpers/sdl) - Premade SDL surface implementation
+- [GLFW](/helpers/glfw) - Premade GLFW surface implementation
+- [Debug](/helpers/debug) - Generic debug messenger
+- [Reflect](/helpers/reflect) - [SPIRV-Reflect](https://github.com/KhronosGroup/SPIRV-Reflect/) binding (does not include natives) (untested)
+
 ## Contributing
 Pull requests are welcome, though this library has a very specific style, so I may make changes to the anything added.
 
