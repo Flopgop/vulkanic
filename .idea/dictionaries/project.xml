@@ -3,6 +3,8 @@
     <words>
       <w>Bitmaskable</w>
       <w>Mebibytes</w>
+      <w>NOPERSPECTIVE</w>
+      <w>SPIRV</w>
       <w>Spirv</w>
       <w>Strided</w>
       <w>Swapchain</w>
@@ -19,6 +21,7 @@
       <w>sfixed</w>
       <w>sfloat</w>
       <w>sint</w>
+      <w>spirv</w>
       <w>sscaled</w>
       <w>swapchain</w>
       <w>swapchains</w>

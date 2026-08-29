@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/helpers" />
             <option value="$PROJECT_DIR$/helpers/debug" />
             <option value="$PROJECT_DIR$/helpers/glfw" />
+            <option value="$PROJECT_DIR$/helpers/reflect" />
             <option value="$PROJECT_DIR$/helpers/sdl" />
             <option value="$PROJECT_DIR$/processor" />
           </set>
