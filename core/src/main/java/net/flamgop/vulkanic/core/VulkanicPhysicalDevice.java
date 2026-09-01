@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public final class VulkanicPhysicalDevice {
+public final class VulkanicPhysicalDevice implements VulkanicObject.Typed<VkPhysicalDevice> {
 
     private final VulkanicInstance instance;
     private final VkPhysicalDevice handle;
@@ -254,5 +254,10 @@ public final class VulkanicPhysicalDevice {
     @Contract(pure = true)
     public @NotNull VkPhysicalDevice handle() {
         return handle;
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.PHYSICAL_DEVICE;
     }
 }

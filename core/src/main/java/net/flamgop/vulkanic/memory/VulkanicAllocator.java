@@ -1,11 +1,9 @@
 package net.flamgop.vulkanic.memory;
 
+import net.flamgop.vulkanic.core.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.util.VkUtil;
-import net.flamgop.vulkanic.core.VulkanicDevice;
-import net.flamgop.vulkanic.core.VulkanicInstance;
-import net.flamgop.vulkanic.core.VulkanicPhysicalDevice;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -15,6 +13,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 
+/// This is technically not eligible for implementing VulkanicObject because it's a vma object
 public final class VulkanicAllocator implements AutoCloseable {
 
     private final VulkanicDevice device;
@@ -168,5 +167,9 @@ public final class VulkanicAllocator implements AutoCloseable {
     @Override
     public void close() {
         Vma.vmaDestroyAllocator(handle);
+    }
+
+    public long handle() {
+        return handle;
     }
 }

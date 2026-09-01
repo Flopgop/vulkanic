@@ -1,11 +1,13 @@
 package net.flamgop.vulkanic.pipeline.descriptor;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public final class VulkanicDescriptorSetLayout implements AutoCloseable {
+public final class VulkanicDescriptorSetLayout implements AutoCloseable, VulkanicObject.Opaque {
     private final VulkanicDevice device;
     private final long handle;
 
@@ -25,5 +27,10 @@ public final class VulkanicDescriptorSetLayout implements AutoCloseable {
     @Override
     public void close() {
         device.destroyDescriptorSetLayout(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.DESCRIPTOR_SET_LAYOUT;
     }
 }

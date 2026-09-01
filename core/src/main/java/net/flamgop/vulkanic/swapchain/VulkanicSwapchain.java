@@ -1,6 +1,8 @@
 package net.flamgop.vulkanic.swapchain;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.image.*;
@@ -21,7 +23,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class VulkanicSwapchain implements AutoCloseable {
+public final class VulkanicSwapchain implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final VulkanicSwapchainCreateInfo createInfo;
@@ -96,5 +98,10 @@ public final class VulkanicSwapchain implements AutoCloseable {
     @Override
     public void close() {
         device.destroySwapchain(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.SWAPCHAIN_KHR;
     }
 }

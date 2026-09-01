@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class VulkanicInstance implements AutoCloseable {
+public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typed<VkInstance> {
     private final @NotNull VulkanicApplicationInfo applicationInfo;
     private final @Unmodifiable @NotNull List<String> enabledLayers;
     private final @Unmodifiable @NotNull List<String> enabledExtensions;
@@ -196,5 +196,10 @@ public final class VulkanicInstance implements AutoCloseable {
     public void close() {
         if (debugMessenger != 0) EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(handle, debugMessenger, null);
         VK10.vkDestroyInstance(handle, null);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.INSTANCE;
     }
 }

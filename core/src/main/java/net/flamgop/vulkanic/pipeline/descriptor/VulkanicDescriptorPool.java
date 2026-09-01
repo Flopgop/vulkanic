@@ -1,6 +1,8 @@
 package net.flamgop.vulkanic.pipeline.descriptor;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public final class VulkanicDescriptorPool implements AutoCloseable {
+public final class VulkanicDescriptorPool implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final VulkanicDescriptorPoolCreateInfo createInfo;
@@ -49,5 +51,10 @@ public final class VulkanicDescriptorPool implements AutoCloseable {
     @Override
     public void close() {
         device.destroyDescriptorPool(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.DESCRIPTOR_POOL;
     }
 }

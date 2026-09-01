@@ -1,6 +1,8 @@
 package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 
 /// note: most of the methods in this class are aliases to the relevant device method
-public final class VulkanicFence implements AutoCloseable {
+public final class VulkanicFence implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final long handle;
@@ -47,5 +49,10 @@ public final class VulkanicFence implements AutoCloseable {
     @Override
     public void close() {
         device.destroyFence(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.FENCE;
     }
 }

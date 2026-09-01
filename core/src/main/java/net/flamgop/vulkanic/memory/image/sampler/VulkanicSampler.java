@@ -1,11 +1,13 @@
 package net.flamgop.vulkanic.memory.image.sampler;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public final class VulkanicSampler implements AutoCloseable {
+public final class VulkanicSampler implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final VulkanicSamplerCreateInfo createInfo;
@@ -33,5 +35,10 @@ public final class VulkanicSampler implements AutoCloseable {
     @Override
     public void close() {
         device.destroySampler(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.SAMPLER;
     }
 }

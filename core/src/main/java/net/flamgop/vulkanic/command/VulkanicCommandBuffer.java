@@ -1,6 +1,8 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.core.VulkanicStridedDeviceAddressRegion;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
@@ -39,7 +41,7 @@ import java.util.List;
 import static org.lwjgl.vulkan.VK13.*;
 
 @SuppressWarnings("UnusedReturnValue")
-public final class VulkanicCommandBuffer implements AutoCloseable {
+public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObject.Typed<VkCommandBuffer> {
 
     private final VulkanicDevice device;
     private final VulkanicCommandPool pool;
@@ -659,5 +661,10 @@ public final class VulkanicCommandBuffer implements AutoCloseable {
     @Override
     public void close() {
         pool.freeCommandBuffer(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.COMMAND_BUFFER;
     }
 }

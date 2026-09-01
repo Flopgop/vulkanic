@@ -18,7 +18,6 @@ import java.util.OptionalInt;
 public record VulkanicRayTracingPipelineCreateInfo(
         @NotNull EnumIntBitset<VulkanicPipelineCreateFlag> flags,
         @Nullable VulkanicPipelineLayout layout,
-
         @NotNull List<VulkanicPipelineShaderStage> stages,
         @NotNull List<VulkanicRayTracingShaderGroup> groups,
         int maxPipelineRayRecursionDepth,

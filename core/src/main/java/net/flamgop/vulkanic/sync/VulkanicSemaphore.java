@@ -1,12 +1,14 @@
 package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public final class VulkanicSemaphore implements AutoCloseable {
+public final class VulkanicSemaphore implements AutoCloseable, VulkanicObject.Opaque {
     private final VulkanicDevice device;
     private final long handle;
     private final VulkanicSemaphoreType type;
@@ -39,5 +41,10 @@ public final class VulkanicSemaphore implements AutoCloseable {
     @Override
     public void close() {
         device.destroySemaphore(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.SEMAPHORE;
     }
 }

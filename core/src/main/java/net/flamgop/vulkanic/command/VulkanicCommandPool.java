@@ -1,16 +1,17 @@
 package net.flamgop.vulkanic.command;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 
 @SuppressWarnings("ClassCanBeRecord")
-public final class VulkanicCommandPool implements AutoCloseable {
+public final class VulkanicCommandPool implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final long handle;
@@ -74,5 +75,10 @@ public final class VulkanicCommandPool implements AutoCloseable {
     @Override
     public void close() {
         device.destroyCommandPool(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.COMMAND_POOL;
     }
 }

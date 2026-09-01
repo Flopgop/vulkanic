@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.util;
 
-public class CommonLayers {
+public final class CommonLayers {
     private static final String KHRONOS = "VK_LAYER_KHRONOS";
     public static final String KHRONOS_VALIDATION = KHRONOS + "_validation";
     public static final String KHRONOS_PROFILES = KHRONOS + "_profiles";

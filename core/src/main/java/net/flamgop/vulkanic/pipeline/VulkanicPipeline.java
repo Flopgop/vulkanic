@@ -1,7 +1,14 @@
 package net.flamgop.vulkanic.pipeline;
 
-public sealed interface VulkanicPipeline extends AutoCloseable permits VulkanicComputePipeline, VulkanicGraphicsPipeline, VulkanicRayTracingPipeline {
-    long handle();
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
+import org.jspecify.annotations.NonNull;
+
+public sealed interface VulkanicPipeline extends AutoCloseable, VulkanicObject.Opaque permits VulkanicComputePipeline, VulkanicGraphicsPipeline, VulkanicRayTracingPipeline {
+    @Override long handle();
+    @Override void close();
     @Override
-    void close();
+    default @NonNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.PIPELINE;
+    }
 }

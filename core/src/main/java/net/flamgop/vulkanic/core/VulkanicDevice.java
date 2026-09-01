@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.command.*;
+import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
 import net.flamgop.vulkanic.core.queue.VulkanicQueue;
 import net.flamgop.vulkanic.core.queue.VulkanicQueueCreateFlag;
@@ -39,7 +40,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public final class VulkanicDevice implements AutoCloseable {
+public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed<VkDevice> {
 
     private final VulkanicInstance instance;
     private final VkDevice handle;
@@ -155,6 +156,18 @@ public final class VulkanicDevice implements AutoCloseable {
             if (!availableExtensions.contains(extension)) {
                 throw new UnsupportedOperationException(String.format("Extension %s is not supported", extension));
             }
+        }
+    }
+
+    public void setObjectName(@NotNull VulkanicDebugObjectNameInfo info) {
+        if (!this.instance.enabledExtensions().contains(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) throw new UnsupportedOperationException("VulkanicDevice#setObjectName requires VK_EXT_DEBUG_UTILS extension");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkDebugUtilsObjectNameInfoEXT pInfo = VkDebugUtilsObjectNameInfoEXT.calloc(stack)
+                    .sType$Default()
+                    .objectType(info.objectType().qualifier())
+                    .objectHandle(info.objectHandle())
+                    .pObjectName(stack.UTF8(info.objectName()));
+            EXTDebugUtils.vkSetDebugUtilsObjectNameEXT(this.handle, pInfo);
         }
     }
 
@@ -1323,5 +1336,10 @@ public final class VulkanicDevice implements AutoCloseable {
     @Override
     public void close() {
         VK11.vkDestroyDevice(this.handle, null);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.DEVICE;
     }
 }

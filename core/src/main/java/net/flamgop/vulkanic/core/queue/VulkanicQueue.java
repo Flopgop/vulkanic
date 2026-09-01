@@ -1,7 +1,8 @@
 package net.flamgop.vulkanic.core.queue;
 
 import net.flamgop.vulkanic.command.VulkanicCommandBuffer;
-import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.swapchain.VulkanicSwapchain;
 import net.flamgop.vulkanic.sync.VulkanicFence;
@@ -10,7 +11,6 @@ import net.flamgop.vulkanic.sync.VulkanicSemaphoreSubmit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -19,7 +19,7 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueue handle) {
+public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueue handle) implements VulkanicObject.Typed<VkQueue> {
 
     /// @see VulkanicQueueFamily#queue
     @ApiStatus.Internal
@@ -180,5 +180,10 @@ public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueu
     @Contract(pure = true)
     public @NotNull VkQueue handle() {
         return handle;
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.QUEUE;
     }
 }

@@ -1,12 +1,14 @@
 package net.flamgop.vulkanic.memory;
 
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.util.vma.VmaAllocationInfo;
 
-public final class VulkanicBuffer implements AutoCloseable {
+public final class VulkanicBuffer implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicAllocator allocator;
     private final long handle;
@@ -99,5 +101,10 @@ public final class VulkanicBuffer implements AutoCloseable {
     @Override
     public void close() {
         this.allocator.destroyBuffer(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.BUFFER;
     }
 }

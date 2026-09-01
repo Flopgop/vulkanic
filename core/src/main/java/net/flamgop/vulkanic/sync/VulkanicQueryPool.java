@@ -1,10 +1,12 @@
 package net.flamgop.vulkanic.sync;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-public final class VulkanicQueryPool implements AutoCloseable {
+public final class VulkanicQueryPool implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicDevice device;
     private final long handle;
@@ -35,5 +37,10 @@ public final class VulkanicQueryPool implements AutoCloseable {
     @Override
     public void close() {
         this.device.destroyQueryPool(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.QUERY_POOL;
     }
 }

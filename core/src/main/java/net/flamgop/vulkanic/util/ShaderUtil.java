@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ShaderUtil {
+public final class ShaderUtil {
     public static boolean containsPrimitiveStage(List<@NotNull VulkanicPipelineShaderStage> stages) {
         return stages.stream().anyMatch(s ->
                 s.stage() == VulkanicShaderStage.VERTEX ||

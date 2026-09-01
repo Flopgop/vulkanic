@@ -13,7 +13,7 @@ import org.lwjgl.vulkan.*;
 import java.time.Duration;
 import java.util.Collection;
 
-public class VkUtil {
+public final class VkUtil {
 
     public static final Duration FOREVER = Duration.ofNanos(Long.MAX_VALUE);
 

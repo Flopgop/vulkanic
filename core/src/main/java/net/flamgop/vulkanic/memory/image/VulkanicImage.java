@@ -1,5 +1,7 @@
 package net.flamgop.vulkanic.memory.image;
 
+import net.flamgop.vulkanic.core.VulkanicObject;
+import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.MappedMemory;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
@@ -13,7 +15,7 @@ import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
 
-public final class VulkanicImage implements AutoCloseable {
+public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque {
 
     private static boolean isDepthFormat(VulkanicFormat format) {
         return switch (format) {
@@ -166,5 +168,10 @@ public final class VulkanicImage implements AutoCloseable {
     public void close() {
         if (externallyAllocated) return; // not valid
         this.allocator.destroyImage(this);
+    }
+
+    @Override
+    public @NotNull VulkanicObjectType objectType() {
+        return VulkanicObjectType.IMAGE_VIEW;
     }
 }
