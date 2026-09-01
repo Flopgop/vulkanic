@@ -2,7 +2,7 @@
 jetbrains-annotations = "26.1.0"
 
 lwjgl = "3.4.1"
-joml = "1.10.8"
+joml = "1.10.9"
 
 jspecify = "1.0.0"
 
