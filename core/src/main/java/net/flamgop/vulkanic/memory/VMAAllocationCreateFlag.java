@@ -3,7 +3,7 @@ package net.flamgop.vulkanic.memory;
 import net.flamgop.vulkanic.util.Bitmaskable;
 import org.lwjgl.util.vma.Vma;
 
-public enum VulkanicAllocationCreateFlag implements Bitmaskable<Integer> {
+public enum VMAAllocationCreateFlag implements Bitmaskable<Integer> {
     DEDICATED_MEMORY(Vma.VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT),
     NEVER_ALLOCATE(Vma.VMA_ALLOCATION_CREATE_NEVER_ALLOCATE_BIT),
     MAPPED(Vma.VMA_ALLOCATION_CREATE_MAPPED_BIT),
@@ -24,7 +24,7 @@ public enum VulkanicAllocationCreateFlag implements Bitmaskable<Integer> {
 
     ;
     private final int flag;
-    VulkanicAllocationCreateFlag(int flag) {
+    VMAAllocationCreateFlag(int flag) {
         this.flag = flag;
     }
 

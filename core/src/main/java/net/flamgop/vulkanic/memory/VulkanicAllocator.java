@@ -1,175 +1,35 @@
 package net.flamgop.vulkanic.memory;
 
-import net.flamgop.vulkanic.core.*;
 import net.flamgop.vulkanic.exception.VulkanException;
-import net.flamgop.vulkanic.memory.image.*;
-import net.flamgop.vulkanic.util.VkUtil;
+import net.flamgop.vulkanic.memory.image.VulkanicImage;
+import net.flamgop.vulkanic.memory.image.VulkanicImageCreateInfo;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.vma.*;
-import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 
-/// This is technically not eligible for implementing VulkanicObject because it's a vma object
-public final class VulkanicAllocator implements AutoCloseable {
+public interface VulkanicAllocator {
+    boolean supportsBufferDeviceAddress();
+    long getBufferDeviceAddress(@NotNull VulkanicBuffer buffer);
 
-    private final VulkanicDevice device;
-    private final long handle;
+    VulkanicAllocation allocateMemory(@NotNull VulkanicMemoryRequirements requirements, @NotNull VulkanicAllocationCreateInfo allocationInfo);
+    void freeMemory(@NotNull VulkanicAllocation allocation);
 
-    private final boolean supportsBufferDeviceAddress;
+    void copyMemoryToAllocation(@NotNull ByteBuffer memory, @NotNull VulkanicAllocation allocation, long offset);
+    void invalidateAllocation(@NotNull VulkanicAllocation allocation);
+    void flushAllocation(@NotNull VulkanicAllocation allocation);
 
-    public VulkanicAllocator(@NotNull VulkanicInstance instance, @NotNull VulkanicPhysicalDevice physicalDevice, @NotNull VulkanicDevice device) throws VulkanException {
-        this.device = device;
-        supportsBufferDeviceAddress = this.device.features().supportsBufferDeviceAddress();
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            VmaVulkanFunctions functions = VmaVulkanFunctions.calloc(stack)
-                    .set(instance.handle(), device.handle());
+    @NotNull AllocatorMappedMemory mapMemory(@NotNull VulkanicAllocation allocation) throws VulkanException;
+    void unmapMemory(@NotNull VulkanicAllocation allocation);
 
-            VmaAllocatorCreateInfo createInfo = VmaAllocatorCreateInfo.calloc(stack)
-                    .instance(instance.handle())
-                    .physicalDevice(physicalDevice.handle())
-                    .device(device.handle())
-                    .pVulkanFunctions(functions)
-                    .vulkanApiVersion(instance.applicationInfo().apiVersion().version());
-            if (supportsBufferDeviceAddress) createInfo.flags(Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT);
-
-            PointerBuffer pAllocator = stack.callocPointer(1);
-            VkUtil.check(Vma.vmaCreateAllocator(createInfo, pAllocator));
-            this.handle = pAllocator.get(0);
-        }
-    }
-
-    public boolean supportsBufferDeviceAddress() {
-        return supportsBufferDeviceAddress;
-    }
-
-    public long getBufferDeviceAddress(@NotNull VulkanicBuffer buffer) {
-        if (!supportsBufferDeviceAddress) throw new UnsupportedOperationException("VulkanicAllocator#getBufferDeviceAddress requires the bufferDeviceAddress feature to be enabled!");
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkBufferDeviceAddressInfo addressInfo = VkBufferDeviceAddressInfo.calloc(stack)
-                    .sType$Default()
-                    .buffer(buffer.handle());
-
-            return VK12.vkGetBufferDeviceAddress(device.handle(), addressInfo);
-        }
-    }
-
-    public void copyMemoryToAllocation(@NotNull ByteBuffer memory, long allocation, long offset) {
-        Vma.vmaCopyMemoryToAllocation(handle, memory, allocation, offset);
-    }
-
-    public void invalidateAllocation(long allocation) {
-        Vma.vmaInvalidateAllocation(handle, allocation, 0, VK10.VK_WHOLE_SIZE);
-    }
-
-    public void flushAllocation(long allocation) {
-        Vma.vmaFlushAllocation(handle, allocation, 0, VK10.VK_WHOLE_SIZE);
-    }
-
-    public void freeMemory(long allocation) {
-        Vma.vmaFreeMemory(this.handle, allocation);
-    }
-
-    public MappedMemory mapMemory(long allocation) throws VulkanException {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer ppData = stack.callocPointer(1);
-            VkUtil.check(Vma.vmaMapMemory(this.handle, allocation, ppData));
-            VmaAllocationInfo info = VmaAllocationInfo.calloc(stack);
-            Vma.vmaGetAllocationInfo(this.handle, allocation, info);
-            return new MappedMemory(this, allocation, ppData.get(0), info.size());
-        }
-    }
-
-    public void unmapMemory(long allocation) {
-        Vma.vmaUnmapMemory(this.handle, allocation);
-    }
-
-    public @NotNull VulkanicBuffer createBuffer(
+    @NotNull VulkanicBuffer createBuffer(
             @NotNull VulkanicBufferCreateInfo bufferCreateInfo,
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo
-    ) throws VulkanException {
-        if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.DESCRIPTOR_HEAP_EXT) && !this.device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("Cannot create a descriptor heap without the descriptor heap feature enabled.");
-        if (bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS) && !this.supportsBufferDeviceAddress) throw new UnsupportedOperationException("Cannot create a buffer with usage SHADER_DEVICE_ADDRESS because this allocator does not support buffer device address.");
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            LongBuffer pBuffer = stack.callocLong(1);
-            PointerBuffer pAllocation = stack.callocPointer(1);
-            VmaAllocationInfo pAllocationInfo = VmaAllocationInfo.calloc(stack);
+    ) throws VulkanException;
+    void destroyBuffer(@NotNull VulkanicBuffer buffer);
 
-            VkBufferCreateInfo pBufferCreateInfo = VkBufferCreateInfo.calloc(stack)
-                    .sType$Default()
-                    .size(bufferCreateInfo.size().bytes())
-                    .usage(bufferCreateInfo.usage().mask())
-                    .sharingMode(bufferCreateInfo.sharingMode().qualifier())
-                    .queueFamilyIndexCount(bufferCreateInfo.queueFamilyIndices().length)
-                    .pQueueFamilyIndices(stack.ints(bufferCreateInfo.queueFamilyIndices()));
-
-            VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)
-                    .flags(allocationCreateInfo.flags().mask())
-                    .usage(allocationCreateInfo.memoryUsage().qualifier())
-                    .requiredFlags(allocationCreateInfo.requiredFlags().mask())
-                    .preferredFlags(allocationCreateInfo.preferredFlags().mask())
-                    .memoryTypeBits(allocationCreateInfo.memoryTypeBits());
-
-            VkUtil.check(Vma.vmaCreateBuffer(this.handle, pBufferCreateInfo, pAllocationCreateInfo, pBuffer, pAllocation, pAllocationInfo));
-            return new VulkanicBuffer(this, pBuffer.get(0), pAllocation.get(0), pAllocationInfo, bufferCreateInfo, allocationCreateInfo);
-        }
-    }
-
-    public void destroyBuffer(@NotNull VulkanicBuffer buffer) {
-        Vma.vmaDestroyBuffer(this.handle, buffer.handle(), buffer.allocation());
-    }
-
-    public @NotNull VulkanicImage createImage(
+    VulkanicImage createImage(
             @NotNull VulkanicImageCreateInfo imageCreateInfo,
-            @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) throws VulkanException {
-        if (imageCreateInfo.extent().x <= 0 || imageCreateInfo.extent().y <= 0 || imageCreateInfo.extent().z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-
-            VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)
-                    .flags(allocationCreateInfo.flags().mask())
-                    .usage(allocationCreateInfo.memoryUsage().qualifier())
-                    .requiredFlags(allocationCreateInfo.requiredFlags().mask())
-                    .preferredFlags(allocationCreateInfo.preferredFlags().mask())
-                    .memoryTypeBits(allocationCreateInfo.memoryTypeBits());
-
-            VkImageCreateInfo pImageCreateInfo = VkImageCreateInfo.calloc(stack)
-                    .sType$Default()
-                    .flags(imageCreateInfo.flags().mask())
-                    .imageType(imageCreateInfo.imageType().qualifier())
-                    .format(imageCreateInfo.format().qualifier())
-                    .extent(e -> e.set(imageCreateInfo.extent().x(), imageCreateInfo.extent().y(), imageCreateInfo.extent().z()))
-                    .mipLevels(imageCreateInfo.mipLevels())
-                    .arrayLayers(imageCreateInfo.arrayLayers())
-                    .samples(imageCreateInfo.samples().flag())
-                    .tiling(imageCreateInfo.tiling().qualifier())
-                    .usage(imageCreateInfo.usage().mask())
-                    .sharingMode(imageCreateInfo.sharingMode().qualifier())
-                    .initialLayout(imageCreateInfo.initialLayout().qualifier())
-                    .queueFamilyIndexCount(imageCreateInfo.queueFamilyIndices().length)
-                    .pQueueFamilyIndices(stack.ints(imageCreateInfo.queueFamilyIndices()));
-
-            LongBuffer pImage = stack.callocLong(1);
-            PointerBuffer pAllocation = stack.callocPointer(1);
-            VmaAllocationInfo pAllocationInfo = VmaAllocationInfo.calloc(stack);
-
-            VkUtil.check(Vma.vmaCreateImage(this.handle, pImageCreateInfo, pAllocationCreateInfo, pImage, pAllocation, pAllocationInfo));
-            return new VulkanicImage(this, pImage.get(0), pAllocation.get(0), pAllocationInfo, imageCreateInfo);
-        }
-    }
-
-    public void destroyImage(@NotNull VulkanicImage image) {
-        Vma.vmaDestroyImage(this.handle, image.handle(), image.allocation());
-    }
-
-    @Override
-    public void close() {
-        Vma.vmaDestroyAllocator(handle);
-    }
-
-    public long handle() {
-        return handle;
-    }
+            @NotNull VulkanicAllocationCreateInfo allocationCreateInfo
+    ) throws VulkanException;
+    void destroyImage(@NotNull VulkanicImage image);
 }

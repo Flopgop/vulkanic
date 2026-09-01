@@ -6,38 +6,27 @@ import net.flamgop.vulkanic.exception.VulkanException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.util.vma.VmaAllocationInfo;
 
 public final class VulkanicBuffer implements AutoCloseable, VulkanicObject.Opaque {
 
     private final VulkanicAllocator allocator;
     private final long handle;
-    private final long allocation;
+    private final VulkanicAllocation allocation;
 
     private final VulkanicBufferCreateInfo bufferCreateInfo;
     private final VulkanicAllocationCreateInfo allocationCreateInfo;
 
-    private final int memoryType;
-    private final long deviceMemory;
-    private final long offset;
-    private final VulkanicDeviceSize size;
-
     private final long deviceAddress;
 
-    /// @see VulkanicAllocator#createBuffer
+    /// @see VMAAllocator#createBuffer
     @ApiStatus.Internal
-    public VulkanicBuffer(@NotNull VulkanicAllocator allocator, long handle, long allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicBufferCreateInfo bufferCreateInfo, @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
+    public VulkanicBuffer(@NotNull VulkanicAllocator allocator, long handle, @NotNull VulkanicAllocation allocation, @NotNull VulkanicBufferCreateInfo bufferCreateInfo, @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
 
         this.bufferCreateInfo = bufferCreateInfo;
         this.allocationCreateInfo = allocationCreateInfo;
-
-        this.memoryType = allocationInfo.memoryType();
-        this.deviceMemory = allocationInfo.deviceMemory();
-        this.offset = allocationInfo.offset();
-        this.size = VulkanicDeviceSize.ofBytes(allocationInfo.size());
 
         if (this.bufferCreateInfo.usage().contains(VulkanicBufferUsageFlag.SHADER_DEVICE_ADDRESS)) this.deviceAddress = allocator.getBufferDeviceAddress(this);
         else deviceAddress = -1;
@@ -62,7 +51,7 @@ public final class VulkanicBuffer implements AutoCloseable, VulkanicObject.Opaqu
         return deviceAddress;
     }
 
-    public @NotNull MappedMemory map() throws VulkanException {
+    public @NotNull AllocatorMappedMemory map() throws VulkanException {
         return this.allocator.mapMemory(this.allocation);
     }
 
@@ -71,24 +60,24 @@ public final class VulkanicBuffer implements AutoCloseable, VulkanicObject.Opaqu
     }
 
     public int memoryType() {
-        return this.memoryType;
+        return this.allocation.memoryTypeIndex();
     }
 
-    public long deviceMemory() {
-        return this.deviceMemory;
+    public VulkanicDeviceMemory deviceMemory() {
+        return this.allocation.deviceMemory();
     }
 
-    public long offset() {
-        return this.offset;
+    public VulkanicDeviceSize offset() {
+        return this.allocation.offset();
     }
 
     public VulkanicDeviceSize size() {
-        return this.size;
+        return this.allocation.size();
     }
 
     @ApiStatus.Internal
     @Contract(pure = true)
-    public long allocation() {
+    public VulkanicAllocation allocation() {
         return allocation;
     }
 

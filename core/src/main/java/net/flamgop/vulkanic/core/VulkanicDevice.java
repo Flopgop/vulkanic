@@ -9,9 +9,10 @@ import net.flamgop.vulkanic.core.queue.VulkanicQueueFamily;
 import net.flamgop.vulkanic.core.queue.VulkanicQueueInfo;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
-import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
+import net.flamgop.vulkanic.memory.*;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
+import net.flamgop.vulkanic.memory.platform.VulkanicImportInfo;
 import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.pipeline.descriptor.*;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
@@ -1258,6 +1259,87 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
             VkUtil.check(KHRRayTracingPipeline.vkCreateRayTracingPipelinesKHR(this.handle, 0, cache != null ? cache.handle() : 0, pCreateInfos, null, pOut));
             return new VulkanicRayTracingPipeline(this, pOut.get(0), createInfo);
         }
+    }
+
+    public void freeMemory(VulkanicDeviceMemory memory) {
+        VK11.vkFreeMemory(this.handle, memory.handle(), null);
+    }
+
+    public VulkanicDeviceMemory allocateMemory(VulkanicMemoryAllocateInfo info) throws VulkanException {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkMemoryAllocateInfo pAllocateInfo = VkMemoryAllocateInfo.calloc(stack)
+                    .sType$Default()
+                    .allocationSize(info.allocationSize().bytes())
+                    .memoryTypeIndex(info.memoryTypeIndex());
+
+            if (info.importInfo() != null) {
+                switch (info.importInfo()) {
+                    case VulkanicImportInfo.Win32HandleKHR win32 ->
+                        pAllocateInfo.pNext(VkImportMemoryWin32HandleInfoKHR.calloc(stack)
+                                .sType$Default()
+                                .handleType(win32.handleType().flag())
+                                .handle(win32.handle())
+                                .name(stack.UTF16(win32.name())));
+                    case VulkanicImportInfo.FdKHR fd ->
+                        pAllocateInfo.pNext(VkImportMemoryFdInfoKHR.calloc(stack)
+                                .sType$Default()
+                                .handleType(fd.handleType().flag())
+                                .fd(fd.fd()));
+                    case VulkanicImportInfo.HostPointerEXT host ->
+                        pAllocateInfo.pNext(VkImportMemoryHostPointerInfoEXT.calloc(stack)
+                                .sType$Default()
+                                .handleType(host.handleType().flag())
+                                .pHostPointer(host.pHostPointer()));
+                    case VulkanicImportInfo.HardwareBufferANDROID awhb ->
+                        pAllocateInfo.pNext(VkImportAndroidHardwareBufferInfoANDROID.calloc(stack)
+                                .sType$Default()
+                                .buffer(awhb.pBuffer()));
+                    case VulkanicImportInfo.MetalHandleEXT metal ->
+                        pAllocateInfo.pNext(VkImportMemoryMetalHandleInfoEXT.calloc(stack)
+                                .sType$Default()
+                                .handleType(metal.handleType().flag())
+                                .handle(metal.pHandle()));
+                }
+            }
+
+            LongBuffer pMemory = stack.callocLong(1);
+            VkUtil.check(VK11.vkAllocateMemory(this.handle, pAllocateInfo, null, pMemory));
+            return new VulkanicDeviceMemory(this, pMemory.get(0));
+        }
+    }
+
+    @SuppressWarnings("resource")
+    public void bindBufferMemory(List<VulkanicBindBufferMemoryInfo> binds) throws VulkanException {
+        if (this.instance.applicationInfo().apiVersion().version() >= ApiVersion.VULKAN_1_1.version()) {
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                VkBindBufferMemoryInfo.Buffer pBinds = VkBindBufferMemoryInfo.calloc(binds.size(), stack);
+                for (int i = 0; i < binds.size(); i++) {
+                    VulkanicBindBufferMemoryInfo bind = binds.get(i);
+                    pBinds.get(i)
+                            .sType$Default()
+                            .buffer(bind.buffer().handle())
+                            .memory(bind.memory().handle())
+                            .memoryOffset(bind.memoryOffset().bytes());
+                }
+                VkUtil.check(VK11.vkBindBufferMemory2(this.handle, pBinds));
+            }
+        } else {
+            for (VulkanicBindBufferMemoryInfo bind : binds) {
+                VkUtil.check(VK10.vkBindBufferMemory(this.handle, bind.buffer().handle(), bind.memory().handle(), bind.memoryOffset().bytes()));
+            }
+        }
+    }
+
+    public @NotNull MappedMemory mapMemory(@NotNull VulkanicDeviceMemory memory, @NotNull VulkanicDeviceSize offset, @NotNull VulkanicDeviceSize size, @NotNull EnumIntBitset<VulkanicMemoryMapFlags> flags) throws VulkanException {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer ppData = stack.callocPointer(1);
+            VkUtil.check(VK10.vkMapMemory(this.handle, memory.handle(), offset.bytes(), size.bytes(), flags.mask(), ppData));
+            return new DeviceMappedMemory(this, memory, ppData.get(0), size.bytes());
+        }
+    }
+
+    public void unmapMemory(@NotNull VulkanicDeviceMemory memory) {
+        VK10.vkUnmapMemory(this.handle, memory.handle());
     }
 
     /// Creates, records, and submits a transient command buffer then returns a CompletableFuture that completes when the fence returned by the submission is finished.

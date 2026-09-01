@@ -3,7 +3,8 @@ package net.flamgop.vulkanic.memory.image;
 import net.flamgop.vulkanic.core.VulkanicObject;
 import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
-import net.flamgop.vulkanic.memory.MappedMemory;
+import net.flamgop.vulkanic.memory.AllocatorMappedMemory;
+import net.flamgop.vulkanic.memory.VulkanicAllocation;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
 import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.util.EnumIntBitset;
@@ -60,7 +61,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
 
     private final VulkanicAllocator allocator;
     private final long handle;
-    private final long allocation;
+    private final VulkanicAllocation allocation;
 
     private final EnumIntBitset<VulkanicImageAspectFlag> aspectMask;
     private final int memoryType;
@@ -74,7 +75,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
 
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(VulkanicAllocator allocator, long handle, long allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicImageCreateInfo createInfo) {
+    public VulkanicImage(VulkanicAllocator allocator, long handle, VulkanicAllocation allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicImageCreateInfo createInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
@@ -96,7 +97,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
         this.allocator = null;
         this.handle = handle;
         this.aspectMask = new EnumIntBitset<>(computeAspectMask(createInfo.format()));
-        this.allocation = 0;
+        this.allocation = null;
         this.memoryType = 0;
         this.deviceMemory = 0;
         this.offset = 0;
@@ -106,7 +107,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
         this.createInfo = createInfo;
     }
 
-    public @NotNull MappedMemory map() throws VulkanException {
+    public @NotNull AllocatorMappedMemory map() throws VulkanException {
         if (externallyAllocated) throw new UnsupportedOperationException("Cannot map externally allocated images (no knowledge of associated memory)");
         return this.allocator.mapMemory(this.allocation);
     }
@@ -154,7 +155,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
 
     @ApiStatus.Internal
     @Contract(pure = true)
-    public long allocation() {
+    public VulkanicAllocation allocation() {
         return allocation;
     }
 
