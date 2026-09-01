@@ -3,8 +3,10 @@ package net.flamgop.vulkanic.core.queue;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class VulkanicQueueFamily {
@@ -35,6 +37,11 @@ public final class VulkanicQueueFamily {
     /// @return the cached queue at the given index
     public VulkanicQueue queue(int index) {
         return queues.get(index);
+    }
+
+    /// @return all queues for this queue family
+    public @NotNull @UnmodifiableView List<VulkanicQueue> queues() {
+        return Collections.unmodifiableList(queues);
     }
 
     /// @return the amount of queues in this family
