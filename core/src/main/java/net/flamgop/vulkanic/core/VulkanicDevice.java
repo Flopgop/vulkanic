@@ -1342,6 +1342,38 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         VK10.vkUnmapMemory(this.handle, memory.handle());
     }
 
+    public long getBufferDeviceAddress(@NotNull VulkanicBuffer buffer) {
+        if (this.instance.applicationInfo().apiVersion().version() >= ApiVersion.VULKAN_1_3.version()) {
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                return VK13.vkGetBufferDeviceAddress(this.handle, VkBufferDeviceAddressInfo.calloc(stack).sType$Default().buffer(buffer.handle()));
+            }
+        } else if (this.features.supportsBufferDeviceAddress()) {
+            if (instance.applicationInfo().apiVersion().version() >= ApiVersion.VULKAN_1_2.version()) {
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    return VK12.vkGetBufferDeviceAddress(this.handle, VkBufferDeviceAddressInfo.calloc(stack).sType$Default().buffer(buffer.handle()));
+                }
+            } else {
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    return KHRBufferDeviceAddress.vkGetBufferDeviceAddressKHR(this.handle, VkBufferDeviceAddressInfo.calloc(stack).sType$Default().buffer(buffer.handle()));
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("VulkanicDevice#getBufferDeviceAddress requires either Vulkan 1.3, Vulkan 1.2 with the buffer device address feature enabled, or VK_KHR_buffer_device_address with it's relevant feature enabled.");
+        }
+    }
+
+    public @NotNull VulkanicMemoryRequirements getBufferMemoryRequirements(@NotNull VulkanicBuffer buffer) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkMemoryRequirements pMemoryRequirements = VkMemoryRequirements.calloc(stack);
+            VK10.vkGetBufferMemoryRequirements(this.handle, buffer.handle(), pMemoryRequirements);
+            return new VulkanicMemoryRequirements(
+                    VulkanicDeviceSize.ofBytes(pMemoryRequirements.size()),
+                    VulkanicDeviceSize.ofBytes(pMemoryRequirements.alignment()),
+                    pMemoryRequirements.memoryTypeBits()
+            );
+        }
+    }
+
     /// Creates, records, and submits a transient command buffer then returns a CompletableFuture that completes when the fence returned by the submission is finished.
     public @NotNull CompletableFuture<Void> submitTransient(
             @NotNull VulkanicCommandPool pool,
