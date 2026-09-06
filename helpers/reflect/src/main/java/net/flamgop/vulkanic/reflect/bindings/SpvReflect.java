@@ -118,10 +118,6 @@ public final class SpvReflect implements AutoCloseable {
         return linker.downcallHandle(symbol, descriptor);
     }
 
-    private static RuntimeException wrap(Throwable t) {
-        return new RuntimeException(t);
-    }
-
     public SpvReflectResult spvReflectCreateShaderModule(long size, MemorySegment pCode, SpvReflectShaderModule pModule) {
         try {
             return SpvReflectResult.fromValue((int) spvReflectCreateShaderModule.invokeExact(size, pCode, pModule.segment()));
