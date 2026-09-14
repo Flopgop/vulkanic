@@ -19,4 +19,14 @@ public enum VulkanicDebugMessageSeverityFlag implements Bitmaskable<Integer> {
     public Integer flag() {
         return flag;
     }
+
+    public static VulkanicDebugMessageSeverityFlag valueOf(int qualifier) {
+        return switch (qualifier) {
+            case EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT -> VERBOSE;
+            case EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT -> INFO;
+            case EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT -> WARNING;
+            case EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT -> ERROR;
+            default -> throw new IllegalArgumentException("Bad qualifier");
+        };
+    }
 }

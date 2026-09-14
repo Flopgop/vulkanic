@@ -17,22 +17,22 @@ public class SimpleDebugMessenger implements VulkanicDebugMessenger {
         return new SimpleDebugMessenger(System.out);
     }
 
-    private final BiConsumer<EnumIntBitset<VulkanicDebugMessageSeverityFlag>, String> logAction;
+    private final BiConsumer<VulkanicDebugMessageSeverityFlag, String> logAction;
 
     public SimpleDebugMessenger(PrintStream stream) {
-        this((severity, message) -> stream.printf("[%s] %s\n", DebugHelpers.highestSeverity(severity), message.replace("\n", "\n\t")));
+        this((severity, message) -> stream.printf("[%s] %s\n", severity, message.replace("\n", "\n\t")));
     }
 
-    public SimpleDebugMessenger(BiConsumer<EnumIntBitset<VulkanicDebugMessageSeverityFlag>, String> logAction) {
+    public SimpleDebugMessenger(BiConsumer<VulkanicDebugMessageSeverityFlag, String> logAction) {
         this.logAction = logAction;
     }
 
-    private String formatMessage(EnumIntBitset<VulkanicDebugMessageSeverityFlag> severity,
+    private String formatMessage(VulkanicDebugMessageSeverityFlag severity,
                                  EnumIntBitset<VulkanicDebugMessageTypeFlag> type,
                                  VulkanicDebugCallbackData data) {
         StringBuilder sb = new StringBuilder();
 
-        String sevStr = severity.toFriendlyString(VulkanicDebugMessageSeverityFlag.class);
+        String sevStr = severity.name();
         String typeStr = type.toFriendlyString(VulkanicDebugMessageTypeFlag.class);
 
         sb.append(String.format("Vulkan %s [%s] - %s (ID: 0x%08X)\n",
@@ -77,7 +77,7 @@ public class SimpleDebugMessenger implements VulkanicDebugMessenger {
     }
 
     @Override
-    public boolean message(EnumIntBitset<VulkanicDebugMessageSeverityFlag> severity, EnumIntBitset<VulkanicDebugMessageTypeFlag> type, VulkanicDebugCallbackData callbackData) {
+    public boolean message(VulkanicDebugMessageSeverityFlag severity, EnumIntBitset<VulkanicDebugMessageTypeFlag> type, VulkanicDebugCallbackData callbackData) {
         String formattedMessage = formatMessage(severity, type, callbackData);
         logAction.accept(severity, formattedMessage);
         return false;

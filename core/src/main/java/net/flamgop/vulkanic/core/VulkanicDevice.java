@@ -160,7 +160,8 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         }
     }
 
-    public void setObjectName(@NotNull VulkanicDebugObjectNameInfo info) {
+    /// Sets the debug object name of a given object.
+    public @NotNull VulkanicResult setObjectName(@NotNull VulkanicDebugObjectNameInfo info) {
         if (!this.instance.enabledExtensions().contains(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) throw new UnsupportedOperationException("VulkanicDevice#setObjectName requires VK_EXT_DEBUG_UTILS extension");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDebugUtilsObjectNameInfoEXT pInfo = VkDebugUtilsObjectNameInfoEXT.calloc(stack)
@@ -168,7 +169,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
                     .objectType(info.objectType().qualifier())
                     .objectHandle(info.objectHandle())
                     .pObjectName(stack.UTF8(info.objectName()));
-            EXTDebugUtils.vkSetDebugUtilsObjectNameEXT(this.handle, pInfo);
+            return VulkanicResult.valueOf(EXTDebugUtils.vkSetDebugUtilsObjectNameEXT(this.handle, pInfo));
         }
     }
 

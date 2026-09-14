@@ -10,5 +10,5 @@ public interface VulkanicDebugMessenger {
      * @return Applications should always return `false`. `true` is reserved for use in layer development.
      */
     @SuppressWarnings("SameReturnValue")
-    boolean message(EnumIntBitset<VulkanicDebugMessageSeverityFlag> severity, EnumIntBitset<VulkanicDebugMessageTypeFlag> type, VulkanicDebugCallbackData callbackData);
+    boolean message(VulkanicDebugMessageSeverityFlag severity, EnumIntBitset<VulkanicDebugMessageTypeFlag> type, VulkanicDebugCallbackData callbackData);
 }

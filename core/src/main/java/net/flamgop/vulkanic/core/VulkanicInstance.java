@@ -1,9 +1,6 @@
 package net.flamgop.vulkanic.core;
 
-import net.flamgop.vulkanic.core.debug.VulkanicDebugCallbackData;
-import net.flamgop.vulkanic.core.debug.VulkanicDebugLabel;
-import net.flamgop.vulkanic.core.debug.VulkanicDebugMessenger;
-import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
+import net.flamgop.vulkanic.core.debug.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.math.Float4;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
@@ -120,7 +117,7 @@ public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typ
                                     callbackDataEXT.pMessageString(),
                                     queueLabels, commandBufferLabels, objects
                             );
-                            return debugMessenger.message(new EnumIntBitset<>(messageSeverity), new EnumIntBitset<>(messageTypes), callbackData) ? VK10.VK_TRUE : VK10.VK_FALSE;
+                            return debugMessenger.message(VulkanicDebugMessageSeverityFlag.valueOf(messageSeverity), new EnumIntBitset<>(messageTypes), callbackData) ? VK10.VK_TRUE : VK10.VK_FALSE;
                         });
                 if (extensions.stream().anyMatch(extension -> extension.equals(EXTDeviceAddressBindingReport.VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME)))
                     createInfoEXT.messageType(
@@ -160,6 +157,51 @@ public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typ
                 physicalDevices.add(new VulkanicPhysicalDevice(this, pDevices.get(i)));
             }
             return physicalDevices;
+        }
+    }
+
+    /// Submits a debug message to the instance
+    @SuppressWarnings("resource")
+    public void submitDebugUtilsMessage(@NotNull VulkanicDebugMessageSeverityFlag severity, @NotNull EnumIntBitset<VulkanicDebugMessageTypeFlag> types, @NotNull VulkanicDebugCallbackData data) {
+        if (!this.enabledExtensions.contains(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) throw new UnsupportedOperationException("Cannot use submitDebugUtilsMessage without VK_EXT_debug_utils");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkDebugUtilsLabelEXT.Buffer pQueueLabels = VkDebugUtilsLabelEXT.calloc(data.queueLabels().size(), stack);
+            for (int i = 0; i < data.queueLabels().size(); i++) {
+                VulkanicDebugLabel label = data.queueLabels().get(i);
+                pQueueLabels.get(i)
+                        .sType$Default()
+                        .pLabelName(stack.UTF8(label.labelName()))
+                        .color(stack.floats(label.color().x(), label.color().y(), label.color().z(), label.color().w()));
+            }
+
+            VkDebugUtilsLabelEXT.Buffer pCmdBufLabels = VkDebugUtilsLabelEXT.calloc(data.commandBufferLabels().size(), stack);
+            for (int i = 0; i < data.commandBufferLabels().size(); i++) {
+                VulkanicDebugLabel label = data.commandBufferLabels().get(i);
+                pCmdBufLabels.get(i)
+                        .sType$Default()
+                        .pLabelName(stack.UTF8(label.labelName()))
+                        .color(stack.floats(label.color().x(), label.color().y(), label.color().z(), label.color().w()));
+            }
+
+            VkDebugUtilsObjectNameInfoEXT.Buffer pObjects = VkDebugUtilsObjectNameInfoEXT.calloc(data.objects().size(), stack);
+            for (int i = 0; i < data.objects().size(); i++) {
+                VulkanicDebugObjectNameInfo object = data.objects().get(i);
+                pObjects.get(i)
+                        .sType$Default()
+                        .objectType(object.objectType().qualifier())
+                        .objectHandle(object.objectHandle())
+                        .pObjectName(stack.UTF8(object.objectName()));
+            }
+
+            VkDebugUtilsMessengerCallbackDataEXT pCallbackData = VkDebugUtilsMessengerCallbackDataEXT.calloc(stack)
+                    .sType$Default()
+                    .pMessageIdName(stack.UTF8(data.messageIdName()))
+                    .messageIdNumber(data.messageIdNumber())
+                    .pMessage(stack.UTF8(data.message()))
+                    .pQueueLabels(pQueueLabels)
+                    .pCmdBufLabels(pCmdBufLabels)
+                    .pObjects(pObjects);
+            EXTDebugUtils.vkSubmitDebugUtilsMessageEXT(this.handle, severity.flag(), types.mask(), pCallbackData);
         }
     }
 
