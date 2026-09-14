@@ -203,7 +203,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer pQueue = stack.callocPointer(1);
             VK11.vkGetDeviceQueue(this.handle, queueFamily.index(), queueIndex, pQueue);
-            return new VulkanicQueue(queueFamily, new VkQueue(pQueue.get(0), this.handle));
+            return new VulkanicQueue(this, queueFamily, new VkQueue(pQueue.get(0), this.handle));
         }
     }
 

@@ -1,6 +1,7 @@
 package net.flamgop.vulkanic.core.queue;
 
 import net.flamgop.vulkanic.command.VulkanicCommandBuffer;
+import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.core.VulkanicObject;
 import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanicResult;
@@ -11,6 +12,7 @@ import net.flamgop.vulkanic.sync.VulkanicSemaphoreSubmit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -19,7 +21,7 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueue handle) implements VulkanicObject.Typed<VkQueue> {
+public record VulkanicQueue(@NotNull VulkanicDevice device, @NotNull VulkanicQueueFamily family, @NotNull VkQueue handle) implements VulkanicObject.Typed<VkQueue> {
 
     /// @see VulkanicQueueFamily#queue
     @ApiStatus.Internal
@@ -97,39 +99,63 @@ public record VulkanicQueue(@NotNull VulkanicQueueFamily family, @NotNull VkQueu
             @NotNull VulkanicCommandBuffer... commandBuffers
     ) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkCommandBufferSubmitInfo.Buffer commandBufferInfos = VkCommandBufferSubmitInfo.calloc(commandBuffers.length, stack);
-            for (int i = 0; i < commandBuffers.length; i++) {
-                VulkanicCommandBuffer commandBuffer = commandBuffers[i];
-                commandBufferInfos.get(i)
+            if (device.features().supportsSynchronization2()) {
+                VkCommandBufferSubmitInfo.Buffer commandBufferInfos = VkCommandBufferSubmitInfo.calloc(commandBuffers.length, stack);
+                for (int i = 0; i < commandBuffers.length; i++) {
+                    VulkanicCommandBuffer commandBuffer = commandBuffers[i];
+                    commandBufferInfos.get(i)
+                            .sType$Default()
+                            .commandBuffer(commandBuffer.handle());
+                }
+
+                VkSemaphoreSubmitInfo.Buffer pWaitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphores.size(), stack);
+                for (int i = 0; i < waitSemaphores.size(); i++) {
+                    VulkanicSemaphoreSubmit submit = waitSemaphores.get(i);
+                    pWaitSemaphores.get(i)
+                            .sType$Default()
+                            .semaphore(submit.semaphore().handle())
+                            .stageMask(submit.stageMask().mask());
+                }
+
+                VkSemaphoreSubmitInfo.Buffer pSignalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphores.size(), stack);
+                for (int i = 0; i < signalSemaphores.size(); i++) {
+                    VulkanicSemaphoreSubmit submit = signalSemaphores.get(i);
+                    pSignalSemaphores.get(i)
+                            .sType$Default()
+                            .semaphore(submit.semaphore().handle())
+                            .stageMask(submit.stageMask().mask());
+                }
+
+                VkSubmitInfo2.Buffer submitInfo = VkSubmitInfo2.calloc(1, stack)
                         .sType$Default()
-                        .commandBuffer(commandBuffer.handle());
-            }
+                        .pCommandBufferInfos(commandBufferInfos)
+                        .pWaitSemaphoreInfos(pWaitSemaphores)
+                        .pSignalSemaphoreInfos(pSignalSemaphores);
 
-            VkSemaphoreSubmitInfo.Buffer pWaitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphores.size(), stack);
-            for (int i = 0; i < waitSemaphores.size(); i++) {
-                VulkanicSemaphoreSubmit submit = waitSemaphores.get(i);
-                pWaitSemaphores.get(i)
+                return VulkanicResult.valueOf(VK13.vkQueueSubmit2(this.handle, submitInfo, fence.handle()));
+            } else {
+
+                PointerBuffer pCommandBuffers = stack.callocPointer(commandBuffers.length);
+                for (int i = 0; i < commandBuffers.length; i++) {
+                    pCommandBuffers.put(i, commandBuffers[i].handle());
+                }
+                LongBuffer pWaitSemaphores = stack.callocLong(waitSemaphores.size());
+                for (int i = 0 ; i < waitSemaphores.size(); i++) {
+                    pWaitSemaphores.put(i, waitSemaphores.get(i).semaphore().handle());
+                }
+                LongBuffer pSignalSemaphores = stack.callocLong(signalSemaphores.size());
+                for (int i = 0; i < signalSemaphores.size(); i++) {
+                    pSignalSemaphores.put(i, signalSemaphores.get(i).semaphore().handle());
+                }
+
+                VkSubmitInfo.Buffer pSubmits = VkSubmitInfo.calloc(1, stack)
                         .sType$Default()
-                        .semaphore(submit.semaphore().handle())
-                        .stageMask(submit.stageMask().mask());
+                        .pCommandBuffers(pCommandBuffers)
+                        .pWaitSemaphores(pWaitSemaphores)
+                        .pSignalSemaphores(pSignalSemaphores);
+
+                return VulkanicResult.valueOf(VK10.vkQueueSubmit(handle, pSubmits, fence.handle()));
             }
-
-            VkSemaphoreSubmitInfo.Buffer pSignalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphores.size(), stack);
-            for (int i = 0; i < signalSemaphores.size(); i++) {
-                VulkanicSemaphoreSubmit submit = signalSemaphores.get(i);
-                pSignalSemaphores.get(i)
-                        .sType$Default()
-                        .semaphore(submit.semaphore().handle())
-                        .stageMask(submit.stageMask().mask());
-            }
-
-            VkSubmitInfo2.Buffer submitInfo = VkSubmitInfo2.calloc(1, stack)
-                    .sType$Default()
-                    .pCommandBufferInfos(commandBufferInfos)
-                    .pWaitSemaphoreInfos(pWaitSemaphores)
-                    .pSignalSemaphoreInfos(pSignalSemaphores);
-
-            return VulkanicResult.valueOf(VK13.vkQueueSubmit2(this.handle, submitInfo, fence.handle()));
         }
     }
 
