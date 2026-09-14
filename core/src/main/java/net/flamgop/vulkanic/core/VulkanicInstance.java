@@ -5,11 +5,11 @@ import net.flamgop.vulkanic.core.debug.VulkanicDebugLabel;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugMessenger;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
 import net.flamgop.vulkanic.exception.VulkanException;
+import net.flamgop.vulkanic.math.Float4;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
 import org.jetbrains.annotations.*;
-import org.joml.Vector4f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -88,7 +88,7 @@ public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typ
                                 for (VkDebugUtilsLabelEXT label : pQueueLabels) {
                                     queueLabels.add(new VulkanicDebugLabel(
                                             label.pLabelNameString(),
-                                            new Vector4f(label.color())
+                                            new Float4.Impl(label.color())
                                     ));
                                 }
                             }
@@ -98,7 +98,7 @@ public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typ
                                 for (VkDebugUtilsLabelEXT label : pCommandBufferLabels) {
                                     commandBufferLabels.add(new VulkanicDebugLabel(
                                             label.pLabelNameString(),
-                                            new Vector4f(label.color())
+                                            new Float4.Impl(label.color())
                                     ));
                                 }
                             }

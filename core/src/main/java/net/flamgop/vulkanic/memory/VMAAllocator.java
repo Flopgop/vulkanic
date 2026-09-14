@@ -182,7 +182,7 @@ public final class VMAAllocator implements AutoCloseable, VulkanicAllocator {
     public @NotNull VulkanicImage createImage(
             @NotNull VulkanicImageCreateInfo imageCreateInfo,
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) throws VulkanException {
-        if (imageCreateInfo.extent().x <= 0 || imageCreateInfo.extent().y <= 0 || imageCreateInfo.extent().z <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
+        if (imageCreateInfo.extent().x() <= 0 || imageCreateInfo.extent().y() <= 0 || imageCreateInfo.extent().z() <= 0) throw new IllegalArgumentException("Cannot create an image with a 0 size!");
         try (MemoryStack stack = MemoryStack.stackPush()) {
 
             VmaAllocationCreateInfo pAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack)

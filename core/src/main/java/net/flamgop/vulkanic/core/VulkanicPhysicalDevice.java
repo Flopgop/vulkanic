@@ -103,7 +103,7 @@ public final class VulkanicPhysicalDevice implements VulkanicObject.Typed<VkPhys
             KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface.handle(), dst);
             return new VulkanicSurfaceCapabilities(
                     dst.minImageCount(), dst.maxImageCount(),
-                    VkUtil.toVector2i(dst.currentExtent()), VkUtil.toVector2i(dst.minImageExtent()), VkUtil.toVector2i(dst.maxImageExtent()), dst.maxImageArrayLayers(),
+                    VkUtil.toInt2(dst.currentExtent()), VkUtil.toInt2(dst.minImageExtent()), VkUtil.toInt2(dst.maxImageExtent()), dst.maxImageArrayLayers(),
                     new EnumIntBitset<>(dst.supportedTransforms()), VulkanicSurfaceTransformFlag.valueOf(dst.currentTransform()),
                     new EnumIntBitset<>(dst.supportedCompositeAlpha()), new EnumIntBitset<>(dst.supportedUsageFlags())
             );
@@ -243,7 +243,7 @@ public final class VulkanicPhysicalDevice implements VulkanicObject.Typed<VkPhys
             List<VulkanicQueueFamilyProperties> properties = new ArrayList<>();
             for (int i = 0; i < pProperties.capacity(); i++) {
                 properties.add(new VulkanicQueueFamilyProperties(
-                        new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toVector3i(pProperties.get(i).minImageTransferGranularity()), i
+                        new EnumIntBitset<>(pProperties.get(i).queueFlags()), pProperties.get(i).queueCount(), pProperties.get(i).timestampValidBits(), VkUtil.toInt3(pProperties.get(i).minImageTransferGranularity()), i
                 ));
             }
             return properties;

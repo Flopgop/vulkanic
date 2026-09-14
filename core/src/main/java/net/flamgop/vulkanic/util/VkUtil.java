@@ -2,10 +2,10 @@ package net.flamgop.vulkanic.util;
 
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.math.Int2;
+import net.flamgop.vulkanic.math.Int3;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2i;
-import org.joml.Vector3i;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -17,12 +17,12 @@ public final class VkUtil {
 
     public static final Duration FOREVER = Duration.ofNanos(Long.MAX_VALUE);
 
-    public static Vector2i toVector2i(VkExtent2D extent2D) {
-        return new Vector2i(extent2D.width(), extent2D.height());
+    public static Int2 toInt2(VkExtent2D extent2D) {
+        return new Int2.Impl(extent2D.width(), extent2D.height());
     }
 
-    public static Vector3i toVector3i(VkExtent3D extent3D) {
-        return new Vector3i(extent3D.width(), extent3D.height(), extent3D.depth());
+    public static Int3 toInt3(VkExtent3D extent3D) {
+        return new Int3.Impl(extent3D.width(), extent3D.height(), extent3D.depth());
     }
 
     public static String errorToString(int ret) {

@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.memory.image;
 import net.flamgop.vulkanic.core.VulkanicObject;
 import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
+import net.flamgop.vulkanic.math.Int3;
 import net.flamgop.vulkanic.memory.AllocatorMappedMemory;
 import net.flamgop.vulkanic.memory.VulkanicAllocation;
 import net.flamgop.vulkanic.memory.VulkanicAllocator;
@@ -11,7 +12,6 @@ import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3ic;
 import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
@@ -121,7 +121,7 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
         return createInfo.format();
     }
 
-    public @NotNull Vector3ic extent() {
+    public @NotNull Int3 extent() {
         return createInfo.extent();
     }
 

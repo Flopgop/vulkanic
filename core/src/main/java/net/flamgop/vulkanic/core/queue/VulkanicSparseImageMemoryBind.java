@@ -1,17 +1,17 @@
 package net.flamgop.vulkanic.core.queue;
 
+import net.flamgop.vulkanic.math.Int3;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresource;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3ic;
 import org.lwjgl.vulkan.VkSparseImageMemoryBind;
 
 public record VulkanicSparseImageMemoryBind(
         @NotNull VulkanicImageSubresource subresource,
-        @NotNull Vector3ic offset,
-        @NotNull Vector3ic extent,
+        @NotNull Int3 offset,
+        @NotNull Int3 extent,
         long memory,
         @Nullable VulkanicDeviceSize memoryOffset,
         @NotNull EnumIntBitset<VulkanicSparseMemoryBindFlag> flags

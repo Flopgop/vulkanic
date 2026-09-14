@@ -5,13 +5,13 @@ import net.flamgop.vulkanic.core.VulkanicObject;
 import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.exception.VulkanicResult;
+import net.flamgop.vulkanic.math.Int3;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
 import net.flamgop.vulkanic.sync.VulkanicFence;
 import net.flamgop.vulkanic.sync.VulkanicSemaphore;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.*;
-import org.joml.Vector3i;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRSwapchain;
 import org.lwjgl.vulkan.VK10;
@@ -47,7 +47,7 @@ public final class VulkanicSwapchain implements AutoCloseable, VulkanicObject.Op
                     EnumIntBitset.empty(),
                     VulkanicImageType.TYPE_2D,
                     createInfo.imageFormat(),
-                    new Vector3i(createInfo.extent(), 1),
+                    new Int3.Impl(createInfo.extent().x(), createInfo.extent().y(), 1),
                     1, createInfo.imageArrayLayers(),
                     VulkanicSampleCountFlag.COUNT_1_BIT,
                     VulkanicImageTiling.OPTIMAL,

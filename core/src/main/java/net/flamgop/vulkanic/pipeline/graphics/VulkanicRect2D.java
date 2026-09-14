@@ -1,17 +1,16 @@
 package net.flamgop.vulkanic.pipeline.graphics;
 
+import net.flamgop.vulkanic.math.Int2;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2i;
-import org.joml.Vector2ic;
 import org.lwjgl.vulkan.VkRect2D;
 
-public record VulkanicRect2D(Vector2ic offset, Vector2ic extent) {
+public record VulkanicRect2D(Int2 offset, Int2 extent) {
     public VulkanicRect2D() {
         this(0,0,0,0);
     }
 
     public VulkanicRect2D(int x, int y, int w, int h) {
-        this(new Vector2i(x, y), new Vector2i(w, h));
+        this(new Int2.Impl(x, y), new Int2.Impl(w, h));
     }
 
     @SuppressWarnings("UnusedReturnValue")

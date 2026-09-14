@@ -19,7 +19,7 @@ dependencies {
     compileOnlyApi(libs.jetbrains.annotations)
     implementation(libs.jspecify)
 
-    api(libs.joml)
+    compileOnly(libs.joml)
     api(platform(libs.lwjgl.bom))
 
     api(libs.lwjgl)

@@ -1,9 +1,11 @@
 package net.flamgop.vulkanic.core;
 
+import net.flamgop.vulkanic.math.Float2;
+import net.flamgop.vulkanic.math.Int2;
+import net.flamgop.vulkanic.math.Int3;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicSampleCountFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
-import org.joml.*;
 import org.lwjgl.vulkan.VkPhysicalDeviceLimits;
 
 public record VulkanicPhysicalDeviceLimits(
@@ -59,9 +61,9 @@ public record VulkanicPhysicalDeviceLimits(
         int maxFragmentDualSrcAttachments,
         int maxFragmentCombinedOutputResources,
         int maxComputeSharedMemorySize,
-        Vector3ic maxComputeWorkGroupCount,
+        Int3 maxComputeWorkGroupCount,
         int maxComputeWorkGroupInvocations,
-        Vector3ic maxComputeWorkGroupSize,
+        Int3 maxComputeWorkGroupSize,
         int subPixelPrecisionBits,
         int subTexelPrecisionBits,
         int mipmapPrecisionBits,
@@ -70,8 +72,8 @@ public record VulkanicPhysicalDeviceLimits(
         float maxSamplerLodBias,
         float maxSamplerAnisotropy,
         int maxViewports,
-        Vector2ic maxViewportDimensions,
-        Vector2fc viewportBoundsRange,
+        Int2 maxViewportDimensions,
+        Float2 viewportBoundsRange,
         int viewportSubPixelBits,
         long minMemoryMapAlignment,
         VulkanicDeviceSize minTexelBufferOffsetAlignment,
@@ -104,8 +106,8 @@ public record VulkanicPhysicalDeviceLimits(
         int maxCullDistances,
         int maxCombinedClipAndCullDistances,
         int discreteQueuePriorities,
-        Vector2fc pointSizeRange,
-        Vector2fc lineWidthRange,
+        Float2 pointSizeRange,
+        Float2 lineWidthRange,
         float pointSizeGranularity,
         float lineWidthGranularity,
         boolean strictLines,
@@ -168,9 +170,9 @@ public record VulkanicPhysicalDeviceLimits(
                 source.maxFragmentDualSrcAttachments(),
                 source.maxFragmentCombinedOutputResources(),
                 source.maxComputeSharedMemorySize(),
-                new Vector3i(source.maxComputeWorkGroupCount()),
+                new Int3.Impl(source.maxComputeWorkGroupCount()),
                 source.maxComputeWorkGroupInvocations(),
-                new Vector3i(source.maxComputeWorkGroupSize()),
+                new Int3.Impl(source.maxComputeWorkGroupSize()),
                 source.subPixelPrecisionBits(),
                 source.subTexelPrecisionBits(),
                 source.mipmapPrecisionBits(),
@@ -179,8 +181,8 @@ public record VulkanicPhysicalDeviceLimits(
                 source.maxSamplerLodBias(),
                 source.maxSamplerAnisotropy(),
                 source.maxViewports(),
-                new Vector2i(source.maxViewportDimensions()),
-                new Vector2f(source.viewportBoundsRange()),
+                new Int2.Impl(source.maxViewportDimensions()),
+                new Float2.Impl(source.viewportBoundsRange()),
                 source.viewportSubPixelBits(),
                 source.minMemoryMapAlignment(),
                 VulkanicDeviceSize.ofBytes(source.minTexelBufferOffsetAlignment()),
@@ -213,8 +215,8 @@ public record VulkanicPhysicalDeviceLimits(
                 source.maxCullDistances(),
                 source.maxCombinedClipAndCullDistances(),
                 source.discreteQueuePriorities(),
-                new Vector2f(source.pointSizeRange()),
-                new Vector2f(source.lineWidthRange()),
+                new Float2.Impl(source.pointSizeRange()),
+                new Float2.Impl(source.lineWidthRange()),
                 source.pointSizeGranularity(),
                 source.lineWidthGranularity(),
                 source.strictLines(),

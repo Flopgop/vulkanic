@@ -1,9 +1,9 @@
 package net.flamgop.vulkanic.core.debug;
 
-import org.joml.Vector4f;
+import net.flamgop.vulkanic.math.Float4;
 
 public record VulkanicDebugLabel(
         String labelName,
-        Vector4f color
+        Float4 color
 ) {
 }

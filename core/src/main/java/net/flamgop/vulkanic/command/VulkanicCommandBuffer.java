@@ -271,8 +271,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
                                 .baseArrayLayer(region.imageSubresource().baseArrayLevel())
                                 .layerCount(region.imageSubresource().layerCount())
                         )
-                        .imageOffset(o -> o.set(region.imageOffset().x, region.imageOffset().y, region.imageOffset().z))
-                        .imageExtent(e -> e.set(region.imageExtent().x, region.imageExtent().y, region.imageExtent().z));
+                        .imageOffset(o -> o.set(region.imageOffset().x(), region.imageOffset().y(), region.imageOffset().z()))
+                        .imageExtent(e -> e.set(region.imageExtent().x(), region.imageExtent().y(), region.imageExtent().z()));
             }
             vkCmdCopyBufferToImage(handle, srcBuffer.handle(), dstImage.handle(), dstLayout.qualifier(), pRegions);
         }

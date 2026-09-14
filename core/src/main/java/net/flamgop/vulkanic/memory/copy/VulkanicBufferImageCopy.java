@@ -1,7 +1,7 @@
 package net.flamgop.vulkanic.memory.copy;
 
+import net.flamgop.vulkanic.math.Int3;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceLayers;
-import org.joml.Vector3i;
 
-public record VulkanicBufferImageCopy(long bufferOffset, int bufferRowLength, int bufferImageHeight, VulkanicImageSubresourceLayers imageSubresource, Vector3i imageOffset, Vector3i imageExtent) {
+public record VulkanicBufferImageCopy(long bufferOffset, int bufferRowLength, int bufferImageHeight, VulkanicImageSubresourceLayers imageSubresource, Int3 imageOffset, Int3 imageExtent) {
 }
