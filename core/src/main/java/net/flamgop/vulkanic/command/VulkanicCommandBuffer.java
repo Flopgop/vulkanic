@@ -125,6 +125,17 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     @Contract(mutates = "this")
+    public void setViewportWithCount(@NotNull VulkanicViewport @NotNull ... viewports) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkViewport.Buffer pViewports = VkViewport.calloc(viewports.length, stack);
+            for (int i = 0; i < viewports.length; i++) {
+                viewports[i].get(pViewports.get(i));
+            }
+            vkCmdSetViewportWithCount(handle, pViewports);
+        }
+    }
+
+    @Contract(mutates = "this")
     public void setScissor(int firstScissor, @NotNull VulkanicRect2D @NotNull ... scissors) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkRect2D.Buffer pScissors = VkRect2D.calloc(scissors.length, stack);
@@ -132,6 +143,17 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
                 scissors[i].get(pScissors.get(i));
             }
             vkCmdSetScissor(handle, firstScissor, pScissors);
+        }
+    }
+
+    @Contract(mutates = "this")
+    public void setScissorWithCount(@NotNull VulkanicRect2D @NotNull ... scissors) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkRect2D.Buffer pScissors = VkRect2D.calloc(scissors.length, stack);
+            for (int i = 0; i < scissors.length; i++) {
+                scissors[i].get(pScissors.get(i));
+            }
+            vkCmdSetScissorWithCount(handle, pScissors);
         }
     }
 
@@ -297,7 +319,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     @Contract(mutates = "this")
     public void pipelineBarrier(@NotNull VulkanicDependencyInfo info) {
         if (!device.features().supportsSynchronization2()) {
-            throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier requires the synchronization2 device extension/feature to be enabled!");
+            throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier(VulkanicDependencyInfo) requires the synchronization2 device extension/feature to be enabled!");
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkMemoryBarrier2.Buffer pMemoryBarriers = VkMemoryBarrier2.calloc(info.memoryBarriers().size(), stack);
