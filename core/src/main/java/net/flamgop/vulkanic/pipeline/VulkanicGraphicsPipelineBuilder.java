@@ -188,6 +188,10 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
             throw new IllegalStateException("Pipeline must have either pipelineLayout or descriptorSetAndBindingMapping set");
         }
 
+        if (rasterizationState != null && !rasterizationState.rasterizerDiscardEnable() && viewportState == null) {
+            throw new IllegalStateException("Pipelines with rasterization enabled must also have a viewport state set.");
+        }
+
         return device.createGraphicsPipeline(
                 new VulkanicGraphicsPipelineCreateInfo(
                     flags,
