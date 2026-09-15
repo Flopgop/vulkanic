@@ -1192,12 +1192,16 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// This can be used to speed up pipeline compilation times for subsequent application starts.
     /// Note: pipeline caches are device-specific, they cannot be simply transferred between devices and should not be shipped.
     /// @see VulkanicPipelineCache
-    public @NotNull VulkanicPipelineCache createPipelineCache(@NotNull EnumIntBitset<VulkanicPipelineCacheCreateFlag> flags, @Nullable ByteBuffer initialData) throws VulkanException {
+    public @NotNull VulkanicPipelineCache createPipelineCache(@NotNull EnumIntBitset<VulkanicPipelineCacheCreateFlag> flags, @Nullable MemorySegment initialData) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPipelineCacheCreateInfo createInfo = VkPipelineCacheCreateInfo.calloc(stack)
                     .sType$Default()
-                    .flags(flags.mask())
-                    .pInitialData(initialData);
+                    .flags(flags.mask());
+
+            if (initialData != null) {
+                MemoryUtil.memPutAddress(createInfo.address() + VkPipelineCacheCreateInfo.PINITIALDATA, initialData.address());
+                VkPipelineCacheCreateInfo.ninitialDataSize(createInfo.address(), initialData.byteSize());
+            }
 
             LongBuffer pCache = stack.callocLong(1);
             VkUtil.check(VK10.vkCreatePipelineCache(this.handle, createInfo, null, pCache));
