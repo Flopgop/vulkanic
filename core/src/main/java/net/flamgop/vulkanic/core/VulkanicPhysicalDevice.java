@@ -98,6 +98,7 @@ public final class VulkanicPhysicalDevice implements VulkanicObject.Typed<VkPhys
     }
 
     public @NotNull VulkanicSurfaceCapabilities surfaceCapabilities(@NotNull VulkanicSurface surface) {
+        if (!instance.enabledExtensions().contains(KHRSurface.VK_KHR_SURFACE_EXTENSION_NAME)) throw new UnsupportedOperationException("VulkanicPhysicalDevice#surfaceCapabilities requires the VK_KHR_surface extension on the instance which this physical device belongs to.");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSurfaceCapabilitiesKHR dst = VkSurfaceCapabilitiesKHR.calloc(stack);
             KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this.handle, surface.handle(), dst);
@@ -111,6 +112,8 @@ public final class VulkanicPhysicalDevice implements VulkanicObject.Typed<VkPhys
     }
 
     public @NotNull Set<VulkanicPresentMode> surfacePresentModes(@NotNull VulkanicSurface surface) {
+        if (!instance.enabledExtensions().contains(KHRSurface.VK_KHR_SURFACE_EXTENSION_NAME))
+            throw new UnsupportedOperationException("VulkanicPhysicalDevice#surfacePresentModes requires the VK_KHR_surface extension on the instance which this physical device belongs to.");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pCount = stack.callocInt(1);
             KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.handle, surface.handle(), pCount, null);

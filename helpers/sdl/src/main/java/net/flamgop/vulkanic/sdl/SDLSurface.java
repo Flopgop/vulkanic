@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.sdl;
 
 import net.flamgop.vulkanic.core.VulkanicInstance;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
+import org.lwjgl.sdl.SDLError;
 import org.lwjgl.sdl.SDLVulkan;
 import org.lwjgl.system.MemoryStack;
 
@@ -23,6 +24,7 @@ public final class SDLSurface implements VulkanicSurface {
     public SDLSurface(VulkanicInstance instance, long window) {
         this.instance = instance;
         this.handle = createSurfaceForWindow(instance, window);
+        if (this.handle == 0x0) throw new IllegalStateException("Failed to create SDLSurface: " + SDLError.SDL_GetError());
     }
 
     @Override
