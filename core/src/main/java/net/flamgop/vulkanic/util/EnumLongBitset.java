@@ -3,12 +3,21 @@ package net.flamgop.vulkanic.util;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) implements Bitset<Long> {
 
-    public EnumLongBitset(@NotNull T[] constants) {
+    public EnumLongBitset(@NotNull T @NotNull [] constants) {
+        long result = 0;
+        for (T constant : constants) {
+            result |= constant.flag();
+        }
+        this(result);
+    }
+
+    public EnumLongBitset(@NotNull List<@NotNull T> constants) {
         long result = 0;
         for (T constant : constants) {
             result |= constant.flag();
