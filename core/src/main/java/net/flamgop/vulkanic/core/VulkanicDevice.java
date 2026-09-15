@@ -965,7 +965,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     public @NotNull VulkanicSwapchain createSwapchain(
             @NotNull VulkanicSwapchainCreateInfo createInfo
     ) throws VulkanException {
-        if (!enabledExtensions.contains(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) throw new UnsupportedOperationException("VulkanicDevice#createSwapchain requires a VK_KHR_swapchain");
+        if (!enabledExtensions.contains(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) throw new UnsupportedOperationException("VulkanicDevice#createSwapchain requires the device extension VK_KHR_swapchain");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pSwapchain = stack.callocLong(1);
             VkSwapchainCreateInfoKHR swapchainCreateInfoKHR = VkSwapchainCreateInfoKHR.calloc(stack)
