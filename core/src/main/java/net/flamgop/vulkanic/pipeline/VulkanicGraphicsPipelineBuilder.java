@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
+import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
@@ -190,6 +191,22 @@ public final class VulkanicGraphicsPipelineBuilder implements VulkanicPipelineBu
 
         if (rasterizationState != null && !rasterizationState.rasterizerDiscardEnable() && viewportState == null) {
             throw new IllegalStateException("Pipelines with rasterization enabled must also have a viewport state set.");
+        }
+
+        if (rasterizationState != null && rasterizationState.lineWidth() == 0.0 && (dynamicState == null || !dynamicState.states().contains(VulkanicDynamicState.LINE_WIDTH))) {
+            throw new IllegalStateException("Pipelines with line width 0 must have line width in dynamic state. If the wideLines feature is not enabled then the line width MUST be 1.0");
+        }
+
+        if (renderingInfo != null && renderingInfo.colorAttachmentFormats().stream().anyMatch(format -> format != VulkanicFormat.UNDEFINED) && colorBlendState == null) {
+            throw new IllegalStateException("Pipelines with any color attachment formats with a defined format must also have a color blend state");
+        }
+
+        if (shaderStages.stream().anyMatch(stage -> stage.stage() == VulkanicShaderStage.VERTEX) && (vertexInputState == null && (dynamicState == null || !dynamicState.states().contains(VulkanicDynamicState.VERTEX_INPUT_EXT)))) {
+            throw new IllegalStateException("Pipelines with a VERTEX shader stage must have a vertex input state specified (or dynamic)");
+        }
+
+        if (vertexInputState != null && (inputAssemblyState == null && (dynamicState == null || (!dynamicState.states().contains(VulkanicDynamicState.PRIMITIVE_RESTART_ENABLE) && !dynamicState.states().contains(VulkanicDynamicState.PRIMITIVE_TOPOLOGY))))) {
+            throw new IllegalStateException("Pipelines with a vertex input state must also have an input assembly state, or have dynamic state for both PRIMITIVE_RESTART_ENABLE and PRIMITIVE_TOPOLOGY");
         }
 
         return device.createGraphicsPipeline(
