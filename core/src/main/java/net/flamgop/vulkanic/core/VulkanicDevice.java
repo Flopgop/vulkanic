@@ -31,6 +31,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -1234,10 +1235,10 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// The given buffer must be large enough to contain the data, see [#getPipelineCacheDataSize]
     /// @see VulkanicPipelineCache
     @Contract(mutates = "param2", value = "_, _ -> _")
-    public @NotNull VulkanicResult getPipelineCacheData(@NotNull VulkanicPipelineCache cache, @NotNull ByteBuffer buffer) {
+    public @NotNull VulkanicResult getPipelineCacheData(@NotNull VulkanicPipelineCache cache, @NotNull MemorySegment segment) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer pDataSize = stack.pointers(buffer.remaining());
-            return VulkanicResult.valueOf(VK10.vkGetPipelineCacheData(this.handle, cache.handle(), pDataSize, buffer));
+            PointerBuffer pDataSize = stack.pointers(segment.byteSize());
+            return VulkanicResult.valueOf(VK10.nvkGetPipelineCacheData(this.handle, cache.handle(), MemoryUtil.memAddress(pDataSize), segment.address()));
         }
     }
 
