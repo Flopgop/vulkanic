@@ -15,4 +15,14 @@ public record VulkanicImageMemoryBarrier(
         int srcQueueFamilyIndex, int dstQueueFamilyIndex,
         VulkanicImage image, VulkanicImageSubresourceRange subresourceRange
 ) {
+    /// Constructor overload for non-synchronization2 usage
+    public VulkanicImageMemoryBarrier(
+            EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
+            EnumLongBitset<VulkanicAccessFlag> dstAccessMask,
+            VulkanicImageLayout oldLayout, VulkanicImageLayout newLayout,
+            int srcQueueFamilyIndex, int dstQueueFamilyIndex,
+            VulkanicImage image, VulkanicImageSubresourceRange subresourceRange
+    ) {
+        this(EnumLongBitset.empty(), srcAccessMask, EnumLongBitset.empty(), dstAccessMask, oldLayout, newLayout, srcQueueFamilyIndex, dstQueueFamilyIndex, image, subresourceRange);
+    }
 }

@@ -9,4 +9,11 @@ public record VulkanicMemoryBarrier(
         EnumLongBitset<VulkanicPipelineStageFlag> dstStageMask,
         EnumLongBitset<VulkanicAccessFlag> dstAccessMask
 ) {
+    /// Constructor overload for non-synchronization2 usage
+    public VulkanicMemoryBarrier(
+            EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
+            EnumLongBitset<VulkanicAccessFlag> dstAccessMask
+    ) {
+        this(EnumLongBitset.empty(), srcAccessMask, EnumLongBitset.empty(), dstAccessMask);
+    }
 }

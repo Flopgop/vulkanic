@@ -24,6 +24,7 @@ import net.flamgop.vulkanic.sync.VulkanicQueryPool;
 import net.flamgop.vulkanic.sync.VulkanicQueryResultFlag;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.EnumLongBitset;
+import net.flamgop.vulkanic.util.MathHelper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -310,16 +311,66 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
         vkCmdFillBuffer(handle, dstBuffer.handle(), dstOffset, size.bytes(), data);
     }
 
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void pipelineBarrier(int srcStageMask, int dstStageMask, int dependencyFlags, @Nullable VkMemoryBarrier.Buffer pMemoryBarriers, @Nullable VkBufferMemoryBarrier.Buffer pBufferMemoryBarriers, @Nullable VkImageMemoryBarrier.Buffer pImageMemoryBarriers) {
-        vkCmdPipelineBarrier(handle, srcStageMask, dstStageMask, dependencyFlags, pMemoryBarriers, pBufferMemoryBarriers, pImageMemoryBarriers);
+    public void pipelineBarrier(
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> srcStageMask,
+            @NotNull EnumLongBitset<VulkanicPipelineStageFlag> dstStageMask,
+            @NotNull EnumIntBitset<VulkanicDependencyFlag> dependencyFlags,
+            @NotNull List<VulkanicMemoryBarrier> memoryBarriers,
+            @NotNull List<VulkanicBufferMemoryBarrier> bufferMemoryBarriers,
+            @NotNull List<VulkanicImageMemoryBarrier> imageMemoryBarriers
+    ) {
+        if (!MathHelper.fitsInInt(srcStageMask.mask()) || !MathHelper.fitsInInt(dstStageMask.mask())) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support extended (long precision) stage flags (i.e., any flags that do not fit within an integer, and would thus cause Math#toIntExact to fail), please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkMemoryBarrier.Buffer pMemoryBarriers = VkMemoryBarrier.calloc(memoryBarriers.size(), stack);
+            for (int i = 0; i < memoryBarriers.size(); i++) {
+                VulkanicMemoryBarrier memoryBarrier = memoryBarriers.get(i);
+                if (memoryBarrier.srcStageMask().some() || memoryBarrier.dstStageMask().some()) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support per-barrier src and dst stage masks, please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                if (!MathHelper.fitsInInt(memoryBarrier.srcAccessMask().mask()) || !MathHelper.fitsInInt(memoryBarrier.dstAccessMask().mask())) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support extended (long precision) access flags (i.e., any flags that do not fit within an integer, and would thus cause Math#toIntExact to fail), please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                pMemoryBarriers.get(i)
+                        .sType$Default()
+                        .srcAccessMask(Math.toIntExact(memoryBarrier.srcAccessMask().mask()))
+                        .dstAccessMask(Math.toIntExact(memoryBarrier.dstAccessMask().mask()));
+            }
+
+            VkBufferMemoryBarrier.Buffer pBufferMemoryBarriers = VkBufferMemoryBarrier.calloc(bufferMemoryBarriers.size(), stack);
+            for (int i = 0; i < bufferMemoryBarriers.size(); i++) {
+                VulkanicBufferMemoryBarrier bufferBarrier = bufferMemoryBarriers.get(i);
+                if (bufferBarrier.srcStageMask().some() || bufferBarrier.dstStageMask().some()) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support per-barrier src and dst stage masks, please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                if (!MathHelper.fitsInInt(bufferBarrier.srcAccessMask().mask()) || !MathHelper.fitsInInt(bufferBarrier.dstAccessMask().mask())) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support extended (long precision) access flags (i.e., any flags that do not fit within an integer, and would thus cause Math#toIntExact to fail), please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                pBufferMemoryBarriers.get(i)
+                        .sType$Default()
+                        .srcAccessMask(Math.toIntExact(bufferBarrier.srcAccessMask().mask()))
+                        .dstAccessMask(Math.toIntExact(bufferBarrier.dstAccessMask().mask()))
+                        .srcQueueFamilyIndex(bufferBarrier.srcQueueFamilyIndex())
+                        .dstQueueFamilyIndex(bufferBarrier.dstQueueFamilyIndex())
+                        .buffer(bufferBarrier.buffer().handle()).offset(bufferBarrier.offset()).size(bufferBarrier.size());
+            }
+
+            VkImageMemoryBarrier.Buffer pImageMemoryBarriers = VkImageMemoryBarrier.calloc(imageMemoryBarriers.size(), stack);
+            for (int i = 0; i < imageMemoryBarriers.size(); i++) {
+                VulkanicImageMemoryBarrier imageBarrier = imageMemoryBarriers.get(i);
+                if (imageBarrier.srcStageMask().some() || imageBarrier.dstStageMask().some()) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support per-barrier src and dst stage masks, please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                if (!MathHelper.fitsInInt(imageBarrier.srcAccessMask().mask()) || !MathHelper.fitsInInt(imageBarrier.dstAccessMask().mask())) throw new IllegalArgumentException("VulkanicCommandBuffer#pipelineBarrier's non-synchronization2 overload does not support extended (long precision) access flags (i.e., any flags that do not fit within an integer, and would thus cause Math#toIntExact to fail), please use VulkanicCommandBuffer#pipelineBarrier(VulkanicDependencyInfo)");
+                pImageMemoryBarriers.get(i)
+                        .sType$Default()
+                        .srcAccessMask(Math.toIntExact(imageBarrier.srcAccessMask().mask()))
+                        .dstAccessMask(Math.toIntExact(imageBarrier.dstAccessMask().mask()))
+                        .oldLayout(imageBarrier.oldLayout().qualifier()).newLayout(imageBarrier.newLayout().qualifier())
+                        .srcQueueFamilyIndex(imageBarrier.srcQueueFamilyIndex()).dstQueueFamilyIndex(imageBarrier.dstQueueFamilyIndex())
+                        .image(imageBarrier.image().handle()).subresourceRange(imageBarrier.subresourceRange()::get);
+            }
+
+            vkCmdPipelineBarrier(handle, Math.toIntExact(srcStageMask.mask()), Math.toIntExact(dstStageMask.mask()), dependencyFlags.mask(), pMemoryBarriers, pBufferMemoryBarriers, pImageMemoryBarriers);
+        }
     }
 
     @SuppressWarnings("resource")
     @Contract(mutates = "this")
     public void pipelineBarrier(@NotNull VulkanicDependencyInfo info) {
         if (!device.features().supportsSynchronization2()) {
-            throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier(VulkanicDependencyInfo) requires the synchronization2 device extension/feature to be enabled!");
+            throw new UnsupportedOperationException("CommandBuffer#pipelineBarrier(VulkanicDependencyInfo) requires the synchronization2 device extension/feature to be enabled! (Or use the non-synchronization2 method with the same name.)");
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkMemoryBarrier2.Buffer pMemoryBarriers = VkMemoryBarrier2.calloc(info.memoryBarriers().size(), stack);

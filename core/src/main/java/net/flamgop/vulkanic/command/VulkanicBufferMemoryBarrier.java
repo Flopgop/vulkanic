@@ -12,4 +12,13 @@ public record VulkanicBufferMemoryBarrier(
         int srcQueueFamilyIndex, int dstQueueFamilyIndex,
         VulkanicBuffer buffer, long offset, long size
 ) {
+    /// Constructor overload for non-synchronization2 usage
+    public VulkanicBufferMemoryBarrier(
+            EnumLongBitset<VulkanicAccessFlag> srcAccessMask,
+            EnumLongBitset<VulkanicAccessFlag> dstAccessMask,
+            int srcQueueFamilyIndex, int dstQueueFamilyIndex,
+            VulkanicBuffer buffer, long offset, long size
+    ) {
+            this(EnumLongBitset.empty(), srcAccessMask, EnumLongBitset.empty(), dstAccessMask, srcQueueFamilyIndex, dstQueueFamilyIndex, buffer, offset, size);
+    }
 }
