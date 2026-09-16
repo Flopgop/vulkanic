@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 
-public interface VulkanicAllocator {
+public interface VulkanicAllocator extends AutoCloseable {
     boolean supportsBufferDeviceAddress();
     long getBufferDeviceAddress(@NotNull VulkanicBuffer buffer);
 
@@ -32,4 +32,6 @@ public interface VulkanicAllocator {
             @NotNull VulkanicAllocationCreateInfo allocationCreateInfo
     ) throws VulkanException;
     void destroyImage(@NotNull VulkanicImage image);
+
+    @Override void close();
 }
