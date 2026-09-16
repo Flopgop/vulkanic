@@ -43,6 +43,12 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(mutates = "this")
+    default void putHalf(long offset, float value) {
+        short halfBits = Float.floatToFloat16(value);
+        segment().set(ValueLayout.JAVA_SHORT, offset, halfBits);
+    }
+
+    @Contract(mutates = "this")
     default void putFloat(long offset, float value) {
         segment().set(ValueLayout.JAVA_FLOAT, offset, value);
     }
@@ -64,6 +70,21 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(mutates = "this")
+    default void putBooleans(long offset, boolean @NotNull [] values) {
+        MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_BOOLEAN, offset, values.length);
+    }
+
+    @Contract(mutates = "this")
+    default void putChars(long offset, char @NotNull [] values) {
+        MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_CHAR, offset, values.length);
+    }
+
+    @Contract(mutates = "this")
+    default void putShorts(long offset, short @NotNull [] values) {
+        MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_SHORT, offset, values.length);
+    }
+
+    @Contract(mutates = "this")
     default void putInts(long offset, int @NotNull [] values) {
         MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_INT, offset, values.length);
     }
@@ -74,8 +95,22 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(mutates = "this")
+    default void putHalfs(long offset, float @NotNull [] values) {
+        short[] halfs = new short[values.length];
+        for (int i = 0; i < values.length; i++) {
+            halfs[i] = Float.floatToFloat16(values[i]);
+        }
+        MemorySegment.copy(halfs, 0, segment(), ValueLayout.JAVA_SHORT, offset, halfs.length);
+    }
+
+    @Contract(mutates = "this")
     default void putFloats(long offset, float @NotNull [] values) {
         MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_FLOAT, offset, values.length);
+    }
+
+    @Contract(mutates = "this")
+    default void putDoubles(long offset, double @NotNull [] values) {
+        MemorySegment.copy(values, 0, segment(), ValueLayout.JAVA_DOUBLE, offset, values.length);
     }
 
     @Contract(pure = true)
@@ -109,6 +144,11 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(pure = true)
+    default float getHalf(long offset) {
+        return Float.float16ToFloat(segment().get(ValueLayout.JAVA_SHORT, offset));
+    }
+
+    @Contract(pure = true)
     default float getFloat(long offset) {
         return segment().get(ValueLayout.JAVA_FLOAT, offset);
     }
@@ -124,6 +164,21 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(pure = true)
+    default void getBooleans(long offset, boolean @NotNull [] destination) {
+        MemorySegment.copy(segment(), ValueLayout.JAVA_BOOLEAN, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    default void getShorts(long offset, short @NotNull [] destination) {
+        MemorySegment.copy(segment(), ValueLayout.JAVA_SHORT, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    default void getChars(long offset, char @NotNull [] destination) {
+        MemorySegment.copy(segment(), ValueLayout.JAVA_CHAR, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
     default void getInts(long offset, int @NotNull [] destination) {
         MemorySegment.copy(segment(), ValueLayout.JAVA_INT, offset, destination, 0, destination.length);
     }
@@ -134,7 +189,19 @@ public interface MappedMemory extends AutoCloseable {
     }
 
     @Contract(pure = true)
+    default void getHalfs(long offset, float @NotNull [] destination) {
+        short[] dst = new short[destination.length];
+        MemorySegment.copy(segment(), ValueLayout.JAVA_SHORT, offset, dst, 0, dst.length);
+        for (int i = 0; i < dst.length; i++) destination[i] = Float.float16ToFloat(dst[i]);
+    }
+
+    @Contract(pure = true)
     default void getFloats(long offset, float @NotNull [] destination) {
         MemorySegment.copy(segment(), ValueLayout.JAVA_FLOAT, offset, destination, 0, destination.length);
+    }
+
+    @Contract(pure = true)
+    default void getDoubles(long offset, double @NotNull [] destination) {
+        MemorySegment.copy(segment(), ValueLayout.JAVA_DOUBLE, offset, destination, 0, destination.length);
     }
 }
