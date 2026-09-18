@@ -203,6 +203,15 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     @Contract(mutates = "this")
+    public void bindVertexBuffer(int firstBinding, @NotNull VulkanicBuffer buffer, long offset) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pBuffers = stack.longs(buffer.handle());
+            LongBuffer pOffsets = stack.longs(offset);
+            vkCmdBindVertexBuffers(handle, firstBinding, pBuffers, pOffsets);
+        }
+    }
+
+    @Contract(mutates = "this")
     public void bindIndexBuffer(@NotNull VulkanicBuffer buffer, long offset, @NotNull VulkanicIndexType indexType) {
         vkCmdBindIndexBuffer(handle, buffer.handle(), offset, indexType.qualifier());
     }
