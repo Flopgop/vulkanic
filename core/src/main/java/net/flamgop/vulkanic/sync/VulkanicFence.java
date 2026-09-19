@@ -33,7 +33,7 @@ public final class VulkanicFence implements AutoCloseable, VulkanicObject.Opaque
     }
 
     public boolean signaled() {
-        return status() == VulkanicResult.SUCCESS;
+        return status().success();
     }
 
     public @NotNull VulkanicResult reset() {
