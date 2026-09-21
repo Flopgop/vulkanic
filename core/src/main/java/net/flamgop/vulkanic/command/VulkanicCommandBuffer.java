@@ -311,6 +311,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Blits an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions` and scaling with `filter`
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
     public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageBlit> regions, @NotNull VulkanicFilter filter) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -364,9 +365,22 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Resolves an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions`
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageResolve.Buffer pRegions) {
-        vkCmdResolveImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
+    public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageResolve> regions) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkImageResolve.Buffer pRegions = VkImageResolve.calloc(regions.size(), stack);
+            for (int i = 0; i < regions.size(); i++) {
+                VulkanicImageResolve resolve = regions.get(i);
+                pRegions.get(i)
+                        .srcSubresource(r -> resolve.srcSubresource().get(r))
+                        .srcOffset(o -> o.set(resolve.srcOffset().x(), resolve.srcOffset().y(), resolve.srcOffset().z()))
+                        .dstSubresource(r -> resolve.dstSubresource().get(r))
+                        .dstOffset(o -> o.set(resolve.dstOffset().x(), resolve.dstOffset().y(), resolve.dstOffset().z()))
+                        .extent(e -> e.set(resolve.extent().x(), resolve.extent().y(), resolve.extent().z()));
+            }
+            vkCmdResolveImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
+        }
     }
 
     /// Begins a render pass
