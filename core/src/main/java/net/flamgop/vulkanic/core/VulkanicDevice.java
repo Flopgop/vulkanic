@@ -149,7 +149,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         }
     }
 
-    private static void assertSupportsAllExtensions(VulkanicPhysicalDevice physicalDevice, Collection<String> extensions) {
+    private static void assertSupportsAllExtensions(@NotNull VulkanicPhysicalDevice physicalDevice, @NotNull Collection<@NotNull String> extensions) {
         List<VulkanicExtensionProperties> extensionProperties = physicalDevice.supportedExtensions();
         Set<String> availableExtensions = extensionProperties.stream()
                 .map(VulkanicExtensionProperties::name)
@@ -176,7 +176,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
 
     /// This function uses [List#stream()] and an `anyMatch` call to check this, and as such is O(N)
     /// @return Whether this device was configured with a specific extension on creation.
-    public boolean supportsExtension(String extension) {
+    public boolean supportsExtension(@NotNull String extension) {
         return enabledExtensions.stream().anyMatch(extension::equals);
     }
 
@@ -194,12 +194,14 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// @apiNote index refers to the actual queue family index as determined during queue family enumeration (i.e., at device creation time)
     /// @param index the queue family index of the queue family
     /// @return the VulkanicQueueFamily for the queue family index, or null if that index was not passed as a VulkanicQueueInfo to this device's constructor,
-    /// this isn't marked as nullable because you can assume that if device creation succeeds, the queue at the specified index does exist.
+    /// this isn't marked as nullable because you can assume that if device creation succeeds (and you passed the queue family index in the device's queue creation list), the queue at the specified index does exist.
     public VulkanicQueueFamily queueFamily(int index) {
         return queueFamilies.get(index);
     }
 
-    /// __Do not use this.__
+    /// __Do not use this.__ (this will create a *new* Vulkanic queue object, which may become confusing to manage. Use the cached method on [VulkanicQueueFamily] instead.)
+    /// @see #queueFamily
+    /// @see VulkanicQueueFamily#queue
     @ApiStatus.Internal
     public @NotNull VulkanicQueue queue(@NotNull VulkanicQueueFamily queueFamily, int queueIndex) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -251,7 +253,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// @see VulkanicFence
     /// @see resetFence
     /// @see fenceStatus
-    public @NotNull VulkanicResult resetFences(@NotNull VulkanicFence... fences) {
+    public @NotNull VulkanicResult resetFences(@NotNull VulkanicFence @NotNull ... fences) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pFences = stack.callocLong(fences.length);
             for (VulkanicFence fence : fences) {
@@ -280,7 +282,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// If `waitAll` is true, this will block until all fences are complete or until `timeout` expires.
     /// If `waitAll` is false, this will block until any fence is complete or until `timeout` expires.
     /// @return [VulkanicResult#TIMEOUT] if `timeout` is zero, or if the fence is not signaled before `timeout` expires, otherwise [VulkanicResult#SUCCESS].
-    public @NotNull VulkanicResult waitForFences(@NotNull Duration timeout, boolean waitAll, @NotNull VulkanicFence... fences) {
+    public @NotNull VulkanicResult waitForFences(@NotNull Duration timeout, boolean waitAll, @NotNull VulkanicFence @NotNull ... fences) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             LongBuffer pFences = stack.callocLong(fences.length);
             for (VulkanicFence fence : fences) {
@@ -344,8 +346,8 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     /// @param queueFamily the [VulkanicQueueFamily] this command pool belongs to. If this pool is protected, the queue family must also be protected.
     /// @see VulkanicCommandPool
     public @NotNull VulkanicCommandPool createCommandPool(
-            EnumIntBitset<VulkanicCommandPoolCreateFlag> flags,
-            VulkanicQueueFamily queueFamily
+            @NotNull EnumIntBitset<VulkanicCommandPoolCreateFlag> flags,
+            @NotNull VulkanicQueueFamily queueFamily
     ) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkCommandPoolCreateInfo createInfo =  VkCommandPoolCreateInfo.calloc(stack)
@@ -525,6 +527,23 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
             VkUtil.check(VK10.vkCreateShaderModule(handle, VkShaderModuleCreateInfo.calloc(stack)
                     .sType$Default()
                     .pCode(pCode), null, pShaderModule));
+            return new VulkanicShaderModule(this, pShaderModule.get(0));
+        }
+    }
+
+    /// Creates a shader module from a MemorySegment pointing to SPIR-V code, compiled with your favorite shader compiler.
+    /// This overload exists primarily in the extremely rare case a shader module's size *may* exceed the 32-bit integer limit (and thus must use a `MemorySegment` instead of a `ByteBuffer`)
+    /// @see VulkanicShaderModule
+    public @NotNull VulkanicShaderModule createShaderModule(@NotNull MemorySegment pCode) throws VulkanException {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkShaderModuleCreateInfo createInfo = VkShaderModuleCreateInfo.calloc(stack)
+                    .sType$Default();
+
+            MemoryUtil.memPutAddress(createInfo.address() + VkShaderModuleCreateInfo.PCODE, pCode.address());
+            VkShaderModuleCreateInfo.ncodeSize(createInfo.address(), pCode.byteSize());
+
+            LongBuffer pShaderModule = stack.callocLong(1);
+            VkUtil.check(VK10.vkCreateShaderModule(handle, createInfo, null, pShaderModule));
             return new VulkanicShaderModule(this, pShaderModule.get(0));
         }
     }

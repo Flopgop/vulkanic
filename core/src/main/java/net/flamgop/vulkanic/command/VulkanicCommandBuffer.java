@@ -313,7 +313,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     /// Blits an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions` and scaling with `filter`
     @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageBlit> regions, @NotNull VulkanicFilter filter) {
+    public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<@NotNull VulkanicImageBlit> regions, @NotNull VulkanicFilter filter) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkImageBlit.Buffer pRegions = VkImageBlit.calloc(regions.size(), stack);
             for (int i = 0; i < regions.size(); i++) {
@@ -367,7 +367,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     /// Resolves an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions`
     @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageResolve> regions) {
+    public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<@NotNull VulkanicImageResolve> regions) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkImageResolve.Buffer pRegions = VkImageResolve.calloc(regions.size(), stack);
             for (int i = 0; i < regions.size(); i++) {
@@ -442,7 +442,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     /// Copies data between two GPU images
     @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void copyImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageCopy> regions) {
+    public void copyImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<@NotNull VulkanicImageCopy> regions) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkImageCopy.Buffer pRegions = VkImageCopy.calloc(regions.size(), stack);
             for (int i = 0; i < regions.size(); i++) {
@@ -868,6 +868,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
 
     /// Binds a resource heap
     /// Requires the descriptor heap feature
+    /// EXPERIMENTAL: descriptor heap api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void bindResourceHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindResourceHeap requires the descriptor heap feature");
@@ -883,6 +885,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
 
     /// Binds a sampler heap
     /// Requires the descriptor heap feature
+    /// EXPERIMENTAL: descriptor heap api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void bindSamplerHeap(@NotNull VulkanicHeapBindInfo bindInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindSamplerHeap requires the descriptor heap feature");
@@ -898,6 +902,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
 
     /// Pushes data (not to be confused with [#pushConstants])
     /// Requires the descriptor heap feature
+    /// EXPERIMENTAL: descriptor heap api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void pushData(@NotNull VulkanicPushDataInfo pushInfo) {
         if (!device.features().supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicCommandBuffer#pushData requires the descriptor heap feature");
@@ -907,6 +913,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Traces rays with the currently bound ray tracing pipeline.
+    /// EXPERIMENTAL: ray tracing api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void traceRays(
             @NotNull VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
@@ -929,6 +937,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Traces rays according to the indirect buffer. This api is unfinished, so see vulkan spec for more detailed explanation. This runs vkCmdTraceRaysIndirectKHR
+    /// EXPERIMENTAL: ray tracing api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void traceRaysIndirect(
             @NotNull VulkanicStridedDeviceAddressRegion raygenShaderBindingTable,
@@ -951,6 +961,8 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Sets the ray tracing pipeline stack size
+    /// EXPERIMENTAL: ray tracing api
+    @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void setRayTracingPipelineStackSize(int pipelineStackSize) {
         if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
