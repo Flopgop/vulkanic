@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/helpers/glfw" />
             <option value="$PROJECT_DIR$/helpers/reflect" />
             <option value="$PROJECT_DIR$/helpers/sdl" />
+            <option value="$PROJECT_DIR$/helpers/vma" />
             <option value="$PROJECT_DIR$/processor" />
           </set>
         </option>

@@ -4,15 +4,12 @@ import net.flamgop.vulkanic.core.VulkanicObject;
 import net.flamgop.vulkanic.core.VulkanicObjectType;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.math.Int3;
-import net.flamgop.vulkanic.memory.AllocatorMappedMemory;
-import net.flamgop.vulkanic.memory.VulkanicAllocation;
-import net.flamgop.vulkanic.memory.VulkanicAllocator;
+import net.flamgop.vulkanic.memory.*;
 import net.flamgop.vulkanic.memory.format.VulkanicFormat;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.util.vma.VmaAllocationInfo;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK11;
 
@@ -64,10 +61,6 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
     private final VulkanicAllocation allocation;
 
     private final EnumIntBitset<VulkanicImageAspectFlag> aspectMask;
-    private final int memoryType;
-    private final long deviceMemory;
-    private final long offset;
-    private final long size;
 
     private final boolean externallyAllocated;
 
@@ -75,16 +68,12 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
 
     /// @see VulkanicAllocator#createImage
     @ApiStatus.Internal
-    public VulkanicImage(VulkanicAllocator allocator, long handle, VulkanicAllocation allocation, @NotNull VmaAllocationInfo allocationInfo, @NotNull VulkanicImageCreateInfo createInfo) {
+    public VulkanicImage(VulkanicAllocator allocator, long handle, @NotNull VulkanicAllocation allocation, @NotNull VulkanicAllocationCreateInfo allocationInfo, @NotNull VulkanicImageCreateInfo createInfo) {
         this.allocator = allocator;
         this.handle = handle;
         this.allocation = allocation;
 
         this.aspectMask = new EnumIntBitset<>(computeAspectMask(createInfo.format()));
-        this.memoryType = allocationInfo.memoryType();
-        this.deviceMemory = allocationInfo.deviceMemory();
-        this.offset = allocationInfo.offset();
-        this.size = allocationInfo.size();
 
         this.createInfo = createInfo;
 
@@ -98,10 +87,6 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
         this.handle = handle;
         this.aspectMask = new EnumIntBitset<>(computeAspectMask(createInfo.format()));
         this.allocation = null;
-        this.memoryType = 0;
-        this.deviceMemory = 0;
-        this.offset = 0;
-        this.size = 0;
         this.externallyAllocated = true;
 
         this.createInfo = createInfo;
@@ -137,23 +122,6 @@ public final class VulkanicImage implements AutoCloseable, VulkanicObject.Opaque
         return aspectMask;
     }
 
-    public int memoryType() {
-        return this.memoryType;
-    }
-
-    public long deviceMemory() {
-        return this.deviceMemory;
-    }
-
-    public long offset() {
-        return this.offset;
-    }
-
-    public long size() {
-        return this.size;
-    }
-
-    @ApiStatus.Internal
     @Contract(pure = true)
     public VulkanicAllocation allocation() {
         return allocation;

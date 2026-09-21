@@ -1,11 +1,14 @@
-package net.flamgop.vulkanic.memory;
+package net.flamgop.vulkanic.memory.vma;
 
-import net.flamgop.vulkanic.core.*;
+import net.flamgop.vulkanic.core.VulkanicDevice;
+import net.flamgop.vulkanic.core.VulkanicInstance;
+import net.flamgop.vulkanic.core.VulkanicPhysicalDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
-import net.flamgop.vulkanic.memory.image.*;
+import net.flamgop.vulkanic.memory.*;
+import net.flamgop.vulkanic.memory.image.VulkanicImage;
+import net.flamgop.vulkanic.memory.image.VulkanicImageCreateInfo;
 import net.flamgop.vulkanic.util.VkUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.*;
@@ -98,25 +101,25 @@ public final class VMAAllocator implements AutoCloseable, VulkanicAllocator {
     }
 
     @Override
-    public void invalidateAllocation(@NonNull VulkanicAllocation allocation) {
+    public void invalidateAllocation(@NotNull VulkanicAllocation allocation) {
         if (!(allocation instanceof Allocation alloc)) throw new UnsupportedOperationException("VMA allocator can only invalidate allocations made by VMA");
         Vma.vmaInvalidateAllocation(handle, alloc.vmaHandle(), 0, VK10.VK_WHOLE_SIZE);
     }
 
     @Override
-    public void flushAllocation(@NonNull VulkanicAllocation allocation) {
+    public void flushAllocation(@NotNull VulkanicAllocation allocation) {
         if (!(allocation instanceof Allocation alloc)) throw new UnsupportedOperationException("VMA allocator can only flush allocations made by VMA");
         Vma.vmaFlushAllocation(handle, alloc.vmaHandle(), 0, VK10.VK_WHOLE_SIZE);
     }
 
     @Override
-    public void freeMemory(@NonNull VulkanicAllocation allocation) {
+    public void freeMemory(@NotNull VulkanicAllocation allocation) {
         if (!(allocation instanceof Allocation alloc)) throw new UnsupportedOperationException("VMA allocator can only free allocations made by VMA");
         Vma.vmaFreeMemory(this.handle, alloc.vmaHandle());
     }
 
     @Override
-    public @NonNull AllocatorMappedMemory mapMemory(@NonNull VulkanicAllocation allocation) throws VulkanException {
+    public @NotNull AllocatorMappedMemory mapMemory(@NotNull VulkanicAllocation allocation) throws VulkanException {
         if (!(allocation instanceof Allocation alloc)) throw new UnsupportedOperationException("VMA allocator can only map allocations made by VMA");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer ppData = stack.callocPointer(1);
@@ -128,7 +131,7 @@ public final class VMAAllocator implements AutoCloseable, VulkanicAllocator {
     }
 
     @Override
-    public void unmapMemory(@NonNull VulkanicAllocation allocation) {
+    public void unmapMemory(@NotNull VulkanicAllocation allocation) {
         if (!(allocation instanceof Allocation alloc)) throw new UnsupportedOperationException("VMA allocator can only unmap allocations made by VMA");
         Vma.vmaUnmapMemory(this.handle, alloc.vmaHandle());
     }
@@ -220,7 +223,7 @@ public final class VMAAllocator implements AutoCloseable, VulkanicAllocator {
                     pAllocation.get(0)
             );
 
-            return new VulkanicImage(this, pImage.get(0), allocation, pAllocationInfo, imageCreateInfo);
+            return new VulkanicImage(this, pImage.get(0), allocation, allocationCreateInfo, imageCreateInfo);
         }
     }
 

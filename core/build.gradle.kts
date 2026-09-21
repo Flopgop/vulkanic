@@ -23,12 +23,10 @@ dependencies {
     api(platform(libs.lwjgl.bom))
 
     api(libs.lwjgl)
-    api(libs.lwjgl.vma)
     api(libs.lwjgl.vulkan)
 
     lwjglNativeTargets.forEach { c ->
         implementation(variantOf(libs.lwjgl.natives) { classifier(c) })
-        implementation(variantOf(libs.lwjgl.vma.natives) { classifier(c) })
     }
 }
 

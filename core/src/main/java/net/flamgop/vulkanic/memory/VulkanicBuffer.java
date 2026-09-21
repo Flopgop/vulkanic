@@ -18,7 +18,7 @@ public final class VulkanicBuffer implements AutoCloseable, VulkanicObject.Opaqu
 
     private final long deviceAddress;
 
-    /// @see VMAAllocator#createBuffer
+    /// @see VulkanicAllocator#createBuffer
     @ApiStatus.Internal
     public VulkanicBuffer(@NotNull VulkanicAllocator allocator, long handle, @NotNull VulkanicAllocation allocation, @NotNull VulkanicBufferCreateInfo bufferCreateInfo, @NotNull VulkanicAllocationCreateInfo allocationCreateInfo) {
         this.allocator = allocator;

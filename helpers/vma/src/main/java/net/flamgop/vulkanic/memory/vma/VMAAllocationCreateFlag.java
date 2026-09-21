@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.memory;
+package net.flamgop.vulkanic.memory.vma;
 
 import net.flamgop.vulkanic.util.Bitmaskable;
 import org.lwjgl.util.vma.Vma;

@@ -13,7 +13,7 @@ public final class AllocatorMappedMemory implements MappedMemory {
 
     /// @see VulkanicBuffer#map
     /// @see net.flamgop.vulkanic.memory.image.VulkanicImage#map
-    AllocatorMappedMemory(VulkanicAllocator allocator, VulkanicAllocation allocation, long address, long size) {
+    public AllocatorMappedMemory(VulkanicAllocator allocator, VulkanicAllocation allocation, long address, long size) {
         this.allocator = allocator;
         this.allocation = allocation;
         this.segment = MemorySegment.ofAddress(address).reinterpret(size);

@@ -8,6 +8,7 @@ include("helpers:glfw")
 include("helpers:sdl")
 include("helpers:debug")
 include("helpers:reflect")
+include("helpers:vma")
 
 dependencyResolutionManagement {
     versionCatalogs {
