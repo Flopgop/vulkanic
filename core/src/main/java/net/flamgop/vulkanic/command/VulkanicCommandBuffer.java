@@ -21,6 +21,8 @@ import net.flamgop.vulkanic.pipeline.graphics.VulkanicBlendConstants;
 import net.flamgop.vulkanic.math.VulkanicRect2D;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicStencilFaceFlag;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicViewport;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPassBeginInfo;
+import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicSubpassContents;
 import net.flamgop.vulkanic.sync.VulkanicQueryControlFlag;
 import net.flamgop.vulkanic.sync.VulkanicQueryPool;
 import net.flamgop.vulkanic.sync.VulkanicQueryResultFlag;
@@ -343,7 +345,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
                         .baseArrayLayer(rect.baseArrayLayer())
                         .layerCount(rect.layerCount());
             }
-            
+
             vkCmdClearAttachments(handle, pAttachments, pRects);
         }
     }
@@ -355,15 +357,29 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Begins a render pass
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void beginRenderPass(@NotNull VkRenderPassBeginInfo pRenderPassBegin, int contents) {
-        vkCmdBeginRenderPass(handle, pRenderPassBegin, contents);
+    public void beginRenderPass(@NotNull VulkanicRenderPassBeginInfo renderPassBegin, @NotNull VulkanicSubpassContents contents) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkClearValue.Buffer pClearValues = VkClearValue.calloc(renderPassBegin.clearValues().size(), stack);
+            for (int i = 0; i < renderPassBegin.clearValues().size(); i++) {
+                VulkanicClearValue clearValue = renderPassBegin.clearValues().get(i);
+                clearValue.copyTo(pClearValues.get(i));
+            }
+            VkRenderPassBeginInfo pRenderPassBegin = VkRenderPassBeginInfo.calloc(stack)
+                    .sType$Default()
+                    .renderPass(renderPassBegin.renderPass().handle())
+                    .framebuffer(renderPassBegin.framebuffer().handle())
+                    .renderArea(r -> renderPassBegin.renderArea().get(r))
+                    .pClearValues(pClearValues);
+            vkCmdBeginRenderPass(handle, pRenderPassBegin, contents.qualifier());
+        }
     }
 
     /// Switches to the next subpass
     @Contract(mutates = "this")
-    public void nextSubpass(int contents) {
-        vkCmdNextSubpass(handle, contents);
+    public void nextSubpass(@NotNull VulkanicSubpassContents contents) {
+        vkCmdNextSubpass(handle, contents.qualifier());
     }
 
     /// Ends a render pass
