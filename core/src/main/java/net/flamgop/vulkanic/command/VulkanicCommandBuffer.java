@@ -10,12 +10,9 @@ import net.flamgop.vulkanic.memory.VulkanicIndexType;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferCopy;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
 import net.flamgop.vulkanic.memory.copy.VulkanicImageCopy;
-import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceRange;
+import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.memory.VulkanicBuffer;
-import net.flamgop.vulkanic.memory.image.VulkanicFilter;
-import net.flamgop.vulkanic.memory.image.VulkanicImage;
-import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
 import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicHeapBindInfo;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicPushDataInfo;
@@ -313,10 +310,24 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
         vkCmdDrawIndexedIndirect(handle, buffer.handle(), offset, drawCount, stride);
     }
 
-    /// Blits an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `pRegions` and scaling with `filter`
+    /// Blits an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions` and scaling with `filter`
     @Contract(mutates = "this")
-    public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageBlit.Buffer pRegions, @NotNull VulkanicFilter filter) {
-        vkCmdBlitImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions, filter.qualifier());
+    public void blitImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageBlit> regions, @NotNull VulkanicFilter filter) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkImageBlit.Buffer pRegions = VkImageBlit.calloc(regions.size(), stack);
+            for (int i = 0; i < regions.size(); i++) {
+                VulkanicImageBlit blit = regions.get(i);
+                pRegions.get(i)
+                        .srcSubresource(r -> blit.srcSubresource().get(r))
+                        .srcOffsets(0, o -> o.set(blit.srcBounds().lower().x(), blit.srcBounds().lower().y(), blit.srcBounds().lower().z()))
+                        .srcOffsets(1, o -> o.set(blit.srcBounds().upper().x(), blit.srcBounds().upper().y(), blit.srcBounds().upper().z()))
+                        .dstSubresource(r -> blit.dstSubresource().get(r))
+                        .dstOffsets(0, o -> o.set(blit.dstBounds().lower().x(), blit.dstBounds().lower().y(), blit.dstBounds().lower().z()))
+                        .dstOffsets(1, o -> o.set(blit.dstBounds().upper().x(), blit.dstBounds().upper().y(), blit.dstBounds().upper().z()));
+            }
+
+            vkCmdBlitImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions, filter.qualifier());
+        }
     }
 
     /// Clears the current depth-stencil image as provided by the currently bound render pass or [#beginRendering]`
@@ -352,7 +363,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
         }
     }
 
-    /// Resolves an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `pRegions`
+    /// Resolves an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `regions`
     @Contract(mutates = "this")
     public void resolveImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageResolve.Buffer pRegions) {
         vkCmdResolveImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
