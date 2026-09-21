@@ -1,5 +1,6 @@
 package net.flamgop.vulkanic.pipeline.graphics;
 
+import net.flamgop.vulkanic.math.VulkanicRect2D;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;

@@ -1,6 +1,5 @@
-package net.flamgop.vulkanic.pipeline.graphics;
+package net.flamgop.vulkanic.math;
 
-import net.flamgop.vulkanic.math.Int2;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.vulkan.VkRect2D;
 

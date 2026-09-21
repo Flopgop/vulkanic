@@ -1,6 +1,6 @@
 package net.flamgop.vulkanic.command;
 
-import net.flamgop.vulkanic.pipeline.graphics.VulkanicRect2D;
+import net.flamgop.vulkanic.math.VulkanicRect2D;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

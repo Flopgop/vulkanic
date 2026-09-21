@@ -17,7 +17,9 @@ import net.flamgop.vulkanic.memory.image.VulkanicImageLayout;
 import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicHeapBindInfo;
 import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicPushDataInfo;
-import net.flamgop.vulkanic.pipeline.graphics.VulkanicRect2D;
+import net.flamgop.vulkanic.pipeline.graphics.VulkanicBlendConstants;
+import net.flamgop.vulkanic.math.VulkanicRect2D;
+import net.flamgop.vulkanic.pipeline.graphics.VulkanicStencilFaceFlag;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicViewport;
 import net.flamgop.vulkanic.sync.VulkanicQueryControlFlag;
 import net.flamgop.vulkanic.sync.VulkanicQueryPool;
@@ -34,7 +36,6 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -203,8 +204,10 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     /// Sets the blend constants for the next (graphics related) pipeline invocations
     /// The bound pipeline must have [net.flamgop.vulkanic.pipeline.graphics.VulkanicDynamicState#BLEND_CONSTANTS] set in its dynamic state.
     @Contract(mutates = "this")
-    public void setBlendConstants(@NotNull FloatBuffer blendConstants) {
-        vkCmdSetBlendConstants(handle, blendConstants);
+    public void setBlendConstants(@NotNull VulkanicBlendConstants blendConstants) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            vkCmdSetBlendConstants(handle, stack.floats(blendConstants.r(), blendConstants.g(), blendConstants.b(), blendConstants.a()));
+        }
     }
 
     /// Sets the depth bounds for the next (graphics related) pipeline invocations
@@ -217,22 +220,22 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     /// Sets the stencil compare mask for the next (graphics related) pipeline invocations
     /// The bound pipeline must have [net.flamgop.vulkanic.pipeline.graphics.VulkanicDynamicState#STENCIL_COMPARE_MASK] set in its dynamic state.
     @Contract(mutates = "this")
-    public void setStencilCompareMask(int faceMask, int compareMask) {
-        vkCmdSetStencilCompareMask(handle, faceMask, compareMask);
+    public void setStencilCompareMask(@NotNull EnumIntBitset<VulkanicStencilFaceFlag> faces, int compareMask) {
+        vkCmdSetStencilCompareMask(handle, faces.mask(), compareMask);
     }
 
     /// Sets the stencil write mask for the next (graphics related) pipeline invocations
     /// The bound pipeline must have [net.flamgop.vulkanic.pipeline.graphics.VulkanicDynamicState#STENCIL_WRITE_MASK] set in its dynamic state.
     @Contract(mutates = "this")
-    public void setStencilWriteMask(int faceMask, int writeMask) {
-        vkCmdSetStencilWriteMask(handle, faceMask, writeMask);
+    public void setStencilWriteMask(@NotNull EnumIntBitset<VulkanicStencilFaceFlag> faces, int writeMask) {
+        vkCmdSetStencilWriteMask(handle, faces.mask(), writeMask);
     }
 
     /// Sets the stencil reference for the next (graphics related) pipeline invocations
     /// The bound pipeline must have [net.flamgop.vulkanic.pipeline.graphics.VulkanicDynamicState#STENCIL_REFERENCE] set in its dynamic state.
     @Contract(mutates = "this")
-    public void setStencilReference(int faceMask, int reference) {
-        vkCmdSetStencilReference(handle, faceMask, reference);
+    public void setStencilReference(@NotNull EnumIntBitset<VulkanicStencilFaceFlag> faces, int reference) {
+        vkCmdSetStencilReference(handle, faces.mask(), reference);
     }
 
     /// Binds several vertex buffers for the next (graphics related) pipeline invocations
@@ -319,9 +322,30 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Clears the current attachments as provided by the currently bound render pass or [#beginRendering]
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void clearAttachments(@NotNull VkClearAttachment.Buffer pAttachments, @NotNull VkClearRect.Buffer pRects) {
-        vkCmdClearAttachments(handle, pAttachments, pRects);
+    public void clearAttachments(@NotNull List<VulkanicClearAttachment> attachments, @NotNull List<VulkanicClearRect> rects) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkClearAttachment.Buffer pAttachments = VkClearAttachment.calloc(attachments.size(), stack);
+            for (int i = 0; i < attachments.size(); i++) {
+                VulkanicClearAttachment attachment = attachments.get(i);
+                pAttachments.get(i)
+                        .aspectMask(attachment.aspectMask().mask())
+                        .colorAttachment(attachment.colorAttachment())
+                        .clearValue(v -> attachment.clearValue().copyTo(v));
+            }
+
+            VkClearRect.Buffer pRects = VkClearRect.calloc(rects.size(), stack);
+            for (int i = 0; i < rects.size(); i++) {
+                VulkanicClearRect rect = rects.get(i);
+                pRects.get(i)
+                        .rect(r -> rect.rect().get(r))
+                        .baseArrayLayer(rect.baseArrayLayer())
+                        .layerCount(rect.layerCount());
+            }
+            
+            vkCmdClearAttachments(handle, pAttachments, pRects);
+        }
     }
 
     /// Resolves an image from `srcImage` with `srcLayout` to `dstImage` with `dstLayout` according to `pRegions`
