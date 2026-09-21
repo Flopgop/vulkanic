@@ -507,7 +507,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         VK11.vkDestroyImageView(this.handle, imageView.handle(), null);
     }
 
-    /// Creates a shader module from a byte array of SPIR-V code, compiled with your favorite shader compiler.
+    /// Creates a shader module from a `byte[]` of SPIR-V code, compiled with your favorite shader compiler.
     /// @see VulkanicShaderModule
     public @NotNull VulkanicShaderModule createShaderModule(byte @NotNull [] code) throws VulkanException {
         ByteBuffer pCode = MemoryUtil.memAlloc(code.length);
@@ -519,7 +519,7 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         }
     }
 
-    /// Creates a shader module from a ByteBuffer of SPIR-V code, compiled with your favorite shader compiler.
+    /// Creates a shader module from a `ByteBuffer` of SPIR-V code, compiled with your favorite shader compiler.
     /// @see VulkanicShaderModule
     public @NotNull VulkanicShaderModule createShaderModule(@NotNull ByteBuffer pCode) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -531,8 +531,9 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
         }
     }
 
-    /// Creates a shader module from a MemorySegment pointing to SPIR-V code, compiled with your favorite shader compiler.
-    /// This overload exists primarily in the extremely rare case a shader module's size *may* exceed the 32-bit integer limit (and thus must use a `MemorySegment` instead of a `ByteBuffer`)
+    /// Creates a shader module from a `MemorySegment` pointing to SPIR-V code, compiled with your favorite shader compiler. </br>
+    /// This overload exists primarily in the extremely rare case a shader module's size *may* exceed the 32-bit integer limit (and thus must use a `MemorySegment` instead of a `ByteBuffer`) </br>
+    /// This is also just a nice wrapper in case your code happens to prefer `MemorySegment`s over `ByteBuffer`s, as this overload incurs no performance difference over the ByteBuffer overload
     /// @see VulkanicShaderModule
     public @NotNull VulkanicShaderModule createShaderModule(@NotNull MemorySegment pCode) throws VulkanException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
