@@ -7,7 +7,9 @@ import net.flamgop.vulkanic.core.VulkanicStridedDeviceAddressRegion;
 import net.flamgop.vulkanic.exception.VulkanicResult;
 import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.memory.VulkanicIndexType;
+import net.flamgop.vulkanic.memory.copy.VulkanicBufferCopy;
 import net.flamgop.vulkanic.memory.copy.VulkanicBufferImageCopy;
+import net.flamgop.vulkanic.memory.copy.VulkanicImageCopy;
 import net.flamgop.vulkanic.memory.image.VulkanicImageSubresourceRange;
 import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.memory.VulkanicBuffer;
@@ -395,15 +397,40 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Copies data between two GPU buffers
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void copyBuffer(@NotNull VulkanicBuffer srcBuffer, @NotNull VulkanicBuffer dstBuffer, VkBufferCopy.Buffer pRegions) {
-        vkCmdCopyBuffer(handle, srcBuffer.handle(), dstBuffer.handle(), pRegions);
+    public void copyBuffer(@NotNull VulkanicBuffer srcBuffer, @NotNull VulkanicBuffer dstBuffer, @NotNull List<@NotNull VulkanicBufferCopy> regions) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkBufferCopy.Buffer pRegions = VkBufferCopy.calloc(regions.size(), stack);
+            for (int i = 0; i < regions.size(); i++) {
+                VulkanicBufferCopy region = regions.get(i);
+                pRegions.get(i)
+                        .srcOffset(region.srcOffset().bytes())
+                        .dstOffset(region.dstOffset().bytes())
+                        .size(region.size().bytes());
+            }
+
+            vkCmdCopyBuffer(handle, srcBuffer.handle(), dstBuffer.handle(), pRegions);
+        }
     }
 
     /// Copies data between two GPU images
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void copyImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull VkImageCopy.Buffer pRegions) {
-        vkCmdCopyImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
+    public void copyImage(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicImage dstImage, @NotNull VulkanicImageLayout dstLayout, @NotNull List<VulkanicImageCopy> regions) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkImageCopy.Buffer pRegions = VkImageCopy.calloc(regions.size(), stack);
+            for (int i = 0; i < regions.size(); i++) {
+                VulkanicImageCopy region = regions.get(i);
+                pRegions.get(i)
+                        .srcSubresource(r -> region.srcSubresource().get(r))
+                        .srcOffset(off -> off.set(region.srcOffset().x(), region.srcOffset().y(), region.srcOffset().z()))
+                        .dstSubresource(r -> region.dstSubresource().get(r))
+                        .dstOffset(off -> off.set(region.dstOffset().x(), region.dstOffset().y(), region.dstOffset().z()))
+                        .extent(ext -> ext.set(region.extent().x(), region.extent().y(), region.extent().z()));
+            }
+            vkCmdCopyImage(handle, srcImage.handle(), srcLayout.qualifier(), dstImage.handle(), dstLayout.qualifier(), pRegions);
+        }
     }
 
     /// Copies a GPU buffer to a GPU image
@@ -418,12 +445,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
                         .bufferOffset(region.bufferOffset())
                         .bufferRowLength(region.bufferRowLength())
                         .bufferImageHeight(region.bufferImageHeight())
-                        .imageSubresource(r -> r
-                                .aspectMask(region.imageSubresource().aspectMask().mask())
-                                .mipLevel(region.imageSubresource().mipLevel())
-                                .baseArrayLayer(region.imageSubresource().baseArrayLevel())
-                                .layerCount(region.imageSubresource().layerCount())
-                        )
+                        .imageSubresource(r -> region.imageSubresource().get(r))
                         .imageOffset(o -> o.set(region.imageOffset().x(), region.imageOffset().y(), region.imageOffset().z()))
                         .imageExtent(e -> e.set(region.imageExtent().x(), region.imageExtent().y(), region.imageExtent().z()));
             }
@@ -432,9 +454,23 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Copies a GPU image to a GPU buffer
+    @SuppressWarnings("resource")
     @Contract(mutates = "this")
-    public void copyImageToBuffer(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicBuffer dstBuffer, VkBufferImageCopy.Buffer pRegions) {
-        vkCmdCopyImageToBuffer(handle, srcImage.handle(), srcLayout.qualifier(), dstBuffer.handle(), pRegions);
+    public void copyImageToBuffer(@NotNull VulkanicImage srcImage, @NotNull VulkanicImageLayout srcLayout, @NotNull VulkanicBuffer dstBuffer, @NotNull List<@NotNull VulkanicBufferImageCopy> regions) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkBufferImageCopy.Buffer pRegions = VkBufferImageCopy.calloc(regions.size(), stack);
+            for (int i = 0; i < regions.size(); i++) {
+                VulkanicBufferImageCopy region = regions.get(i);
+                pRegions.get(i)
+                        .bufferOffset(region.bufferOffset())
+                        .bufferRowLength(region.bufferRowLength())
+                        .bufferImageHeight(region.bufferImageHeight())
+                        .imageSubresource(r -> region.imageSubresource().get(r))
+                        .imageOffset(o -> o.set(region.imageOffset().x(), region.imageOffset().y(), region.imageOffset().z()))
+                        .imageExtent(e -> e.set(region.imageExtent().x(), region.imageExtent().y(), region.imageExtent().z()));
+            }
+            vkCmdCopyImageToBuffer(handle, srcImage.handle(), srcLayout.qualifier(), dstBuffer.handle(), pRegions);
+        }
     }
 
     /// Fills a GPU buffer with a single value
