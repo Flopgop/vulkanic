@@ -1,13 +1,17 @@
 package net.flamgop.vulkanic.core.debug;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 public record VulkanicDebugCallbackData(
-        String messageIdName,
+        @Nullable String messageIdName,
         int messageIdNumber,
-        String message,
-        List<VulkanicDebugLabel> queueLabels,
-        List<VulkanicDebugLabel> commandBufferLabels,
-        List<VulkanicDebugObjectNameInfo> objects
+        @NotNull String message,
+        @NotNull List<VulkanicDebugLabel> queueLabels,
+        @NotNull List<VulkanicDebugLabel> commandBufferLabels,
+        @NotNull List<VulkanicDebugObjectNameInfo> objects,
+        @Nullable VulkanicDeviceAddressBindingCallbackData deviceAddressBindingCallbackData
 ) {
 }

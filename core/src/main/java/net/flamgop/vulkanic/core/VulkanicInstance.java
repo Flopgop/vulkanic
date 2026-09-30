@@ -3,6 +3,7 @@ package net.flamgop.vulkanic.core;
 import net.flamgop.vulkanic.core.debug.*;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.math.Float4;
+import net.flamgop.vulkanic.memory.VulkanicDeviceSize;
 import net.flamgop.vulkanic.surface.VulkanicSurface;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import net.flamgop.vulkanic.util.VkUtil;
@@ -110,12 +111,26 @@ public final class VulkanicInstance implements AutoCloseable, VulkanicObject.Typ
                                     ));
                                 }
                             }
+                            VulkanicDeviceAddressBindingCallbackData deviceAddressBindingCallbackData;
+                            if (callbackDataEXT.pNext() != 0) {
+                                @SuppressWarnings("resource")
+                                VkDeviceAddressBindingCallbackDataEXT pDABCallbackData = VkDeviceAddressBindingCallbackDataEXT.create(callbackDataEXT.pNext());
+                                deviceAddressBindingCallbackData = new VulkanicDeviceAddressBindingCallbackData(
+                                        new EnumIntBitset<>(pDABCallbackData.flags()),
+                                        pDABCallbackData.baseAddress(),
+                                        VulkanicDeviceSize.ofBytes(pDABCallbackData.size()),
+                                        VulkanicDeviceAddressBindingType.valueOf(pDABCallbackData.bindingType())
+                                );
+                            } else {
+                                deviceAddressBindingCallbackData = null;
+                            }
 
+                            @SuppressWarnings("DataFlowIssue")
                             VulkanicDebugCallbackData callbackData = new VulkanicDebugCallbackData(
                                     callbackDataEXT.pMessageIdNameString(),
                                     callbackDataEXT.messageIdNumber(),
                                     callbackDataEXT.pMessageString(),
-                                    queueLabels, commandBufferLabels, objects
+                                    queueLabels, commandBufferLabels, objects, deviceAddressBindingCallbackData
                             );
                             return debugMessenger.message(VulkanicDebugMessageSeverityFlag.valueOf(messageSeverity), new EnumIntBitset<>(messageTypes), callbackData) ? VK10.VK_TRUE : VK10.VK_FALSE;
                         });

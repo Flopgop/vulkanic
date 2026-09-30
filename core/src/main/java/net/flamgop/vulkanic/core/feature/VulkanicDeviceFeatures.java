@@ -252,6 +252,10 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean presentTiming = false;
     @VulkanFeature(extension = EXTSwapchainMaintenance1.VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT.class)
     private static final boolean swapchainMaintenance1 = false;
+    @VulkanFeature(extension = EXTDeviceFault.VK_EXT_DEVICE_FAULT_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceFaultFeaturesEXT.class)
+    private static final boolean deviceFault = false;
+    @VulkanFeature(extension = EXTDeviceAddressBindingReport.VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceAddressBindingReportFeaturesEXT.class)
+    private static final boolean reportAddressBinding = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();

@@ -2,6 +2,10 @@ package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
+import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultAddressInfo;
+import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultAddressType;
+import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultInfo;
+import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultVendorInfo;
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
 import net.flamgop.vulkanic.core.queue.VulkanicQueue;
 import net.flamgop.vulkanic.core.queue.VulkanicQueueCreateFlag;
@@ -1465,6 +1469,45 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
     @SuppressWarnings("UnusedReturnValue")
     public @NotNull VulkanicResult waitIdle() {
         return VulkanicResult.valueOf(VK11.vkDeviceWaitIdle(this.handle));
+    }
+
+    @SuppressWarnings("resource")
+    public @NotNull VulkanicDeviceFaultInfo getDeviceFaultInfo() throws VulkanException {
+        if (!features.supportsDeviceFault()) throw new UnsupportedOperationException("VulkanicDevice#getDeviceFaultInfo requires the device fault device feature.");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkDeviceFaultCountsEXT pFaultCounts = VkDeviceFaultCountsEXT.calloc(stack);
+            VkDeviceFaultInfoEXT pFaults = VkDeviceFaultInfoEXT.calloc(stack);
+            VkUtil.check(EXTDeviceFault.vkGetDeviceFaultInfoEXT(this.handle, pFaultCounts, pFaults));
+
+            VkDeviceFaultAddressInfoEXT.Buffer pAddressInfos = VkDeviceFaultAddressInfoEXT.create(pFaults.pAddressInfos().address(), pFaultCounts.addressInfoCount());
+            VkDeviceFaultVendorInfoEXT.Buffer pVendorInfos = VkDeviceFaultVendorInfoEXT.create(pFaults.pVendorInfos().address(), pFaultCounts.vendorInfoCount());
+
+            List<VulkanicDeviceFaultAddressInfo> addressInfos = new ArrayList<>(pFaultCounts.addressInfoCount());
+            for (int i = 0; i < pFaultCounts.addressInfoCount(); i++) {
+                VkDeviceFaultAddressInfoEXT pAddressInfo = pAddressInfos.get(i);
+                addressInfos.add(new VulkanicDeviceFaultAddressInfo(
+                        VulkanicDeviceFaultAddressType.valueOf(pAddressInfo.addressType()),
+                        pAddressInfo.reportedAddress(),
+                        VulkanicDeviceSize.ofBytes(pAddressInfo.addressPrecision())
+                ));
+            }
+            List<VulkanicDeviceFaultVendorInfo> vendorInfos = new ArrayList<>(pFaultCounts.vendorInfoCount());
+            for (int i = 0; i < pFaultCounts.vendorInfoCount(); i++) {
+                VkDeviceFaultVendorInfoEXT pVendorInfo = pVendorInfos.get(i);
+                vendorInfos.add(new VulkanicDeviceFaultVendorInfo(
+                        pVendorInfo.descriptionString(),
+                        pVendorInfo.vendorFaultCode(),
+                        pVendorInfo.vendorFaultData()
+                ));
+            }
+
+            return new VulkanicDeviceFaultInfo(
+                    pFaults.descriptionString(),
+                    addressInfos,
+                    vendorInfos,
+                    MemorySegment.ofAddress(pFaults.pVendorBinaryData())
+            );
+        }
     }
 
     @ApiStatus.Internal
