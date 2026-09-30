@@ -256,6 +256,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean deviceFault = false;
     @VulkanFeature(extension = EXTDeviceAddressBindingReport.VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceAddressBindingReportFeaturesEXT.class)
     private static final boolean reportAddressBinding = false;
+    @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
+    private static final boolean geometryShader = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();
