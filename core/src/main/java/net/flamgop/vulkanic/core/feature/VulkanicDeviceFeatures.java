@@ -258,6 +258,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean reportAddressBinding = false;
     @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
     private static final boolean geometryShader = false;
+    @VulkanFeature(extension = KHRFragmentShaderBarycentric.VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR.class)
+    private static final boolean fragmentShaderBarycentric = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();
