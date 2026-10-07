@@ -90,6 +90,6 @@ public record EnumLongBitset<T extends Enum<T> & Bitmaskable<Long>>(Long mask) i
 
     @Override
     public @NotNull String toString() {
-        return "EnumLongBitset(0x" + Long.toHexString(mask).toUpperCase() + ")";
+        return "EnumLongBitset(0x" + String.format("%016X", mask) + ")";
     }
 }

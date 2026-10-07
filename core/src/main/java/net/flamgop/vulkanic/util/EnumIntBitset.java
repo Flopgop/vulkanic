@@ -90,6 +90,6 @@ public record EnumIntBitset<T extends Enum<T> & Bitmaskable<Integer>>(Integer ma
 
     @Override
     public @NotNull String toString() {
-        return "EnumIntBitset(0x" + Integer.toHexString(mask).toUpperCase() + ")";
+        return "EnumIntBitset(0x" + String.format("%08X", mask) + ")";
     }
 }
