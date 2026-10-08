@@ -260,6 +260,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean geometryShader = false;
     @VulkanFeature(featuresStruct = VkPhysicalDevice8BitStorageFeaturesKHR.class, extension = KHR8bitStorage.VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
     private static final boolean storagePushConstant8 = false;
+    @VulkanFeature(featuresStruct = VkPhysicalDevice16BitStorageFeaturesKHR.class, extension = KHR16bitStorage.VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
+    private static final boolean storagePushConstant16 = false;
     @VulkanFeature(extension = KHRFragmentShaderBarycentric.VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR.class)
     private static final boolean fragmentShaderBarycentric = false;
 
