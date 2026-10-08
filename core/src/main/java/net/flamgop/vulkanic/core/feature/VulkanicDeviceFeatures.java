@@ -266,6 +266,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean fragmentShaderBarycentric = false;
     @VulkanFeature(extension = EXTPageableDeviceLocalMemory.VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, featuresStruct = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.class)
     private static final boolean pageableDeviceLocalMemory = false;
+    @VulkanFeature(extension = EXTMemoryPriority.VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceMemoryPriorityFeaturesEXT.class)
+    private static final boolean memoryPriority = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();
