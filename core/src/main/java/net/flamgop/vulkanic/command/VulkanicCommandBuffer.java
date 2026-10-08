@@ -753,7 +753,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
         EXTMeshShader.vkCmdDrawMeshTasksIndirectCountEXT(this.handle, buffer.handle(), offset.bytes(), countBuffer.handle(), countBufferOffset.bytes(), maxDrawCount, stride);
     }
 
-    /// Transitions the layout of an image by blocking RW on all commands
+    /// Transitions the layout of an image by guessing a good src/dst stage/access mask for the given layouts.
     /// This is intended to be good enough, there are explicit overloads if you need better synchronization, but this should work for most conventional graphics and compute tasks. Worst case scenario (e.g., GENERAL or unknown src/dst), this blocks RW on all commands
     /// Requires synchronization2.
     @Contract(mutates = "this")
@@ -765,7 +765,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
         transitionImageLayout(image, oldLayout, newLayout, 0, -1);
     }
 
-    /// Transitions the layout of an image on specific mip levels by blocking RW on all commands
+    /// Transitions the layout of an image on specific mip levels by guessing a good src/dst stage/access mask for the given layouts.
     /// This is intended to be good enough, there are explicit overloads if you need better synchronization, but this should work for most conventional graphics and compute tasks. Worst case scenario (e.g., GENERAL or unknown src/dst), this blocks RW on all commands
     /// Requires synchronization2
     @Contract(mutates = "this")
