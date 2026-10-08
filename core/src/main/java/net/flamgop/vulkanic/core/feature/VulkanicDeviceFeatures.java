@@ -258,12 +258,14 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean reportAddressBinding = false;
     @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
     private static final boolean geometryShader = false;
-    @VulkanFeature(featuresStruct = VkPhysicalDevice8BitStorageFeaturesKHR.class, extension = KHR8bitStorage.VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
+    @VulkanFeature(extension = KHR8bitStorage.VK_KHR_8BIT_STORAGE_EXTENSION_NAME, featuresStruct = VkPhysicalDevice8BitStorageFeaturesKHR.class)
     private static final boolean storagePushConstant8 = false;
-    @VulkanFeature(featuresStruct = VkPhysicalDevice16BitStorageFeaturesKHR.class, extension = KHR16bitStorage.VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
+    @VulkanFeature( extension = KHR16bitStorage.VK_KHR_16BIT_STORAGE_EXTENSION_NAME, featuresStruct = VkPhysicalDevice16BitStorageFeaturesKHR.class)
     private static final boolean storagePushConstant16 = false;
     @VulkanFeature(extension = KHRFragmentShaderBarycentric.VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR.class)
     private static final boolean fragmentShaderBarycentric = false;
+    @VulkanFeature(extension = EXTPageableDeviceLocalMemory.VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, featuresStruct = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.class)
+    private static final boolean pageableDeviceLocalMemory = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();
