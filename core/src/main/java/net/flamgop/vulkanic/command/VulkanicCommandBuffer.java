@@ -754,24 +754,19 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     }
 
     /// Transitions the layout of an image by blocking RW on all commands
-    /// This is a helper, not designed to be the most performant solution. See the other overloads for more granular control.
-    /// Requires synchronization2
+    /// This is intended to be good enough, there are explicit overloads if you need better synchronization, but this should work for most conventional graphics and compute tasks. Worst case scenario (e.g., GENERAL or unknown src/dst), this blocks RW on all commands
+    /// Requires synchronization2.
     @Contract(mutates = "this")
     public void transitionImageLayout(
             @NotNull VulkanicImage image,
             @NotNull VulkanicImageLayout oldLayout,
             @NotNull VulkanicImageLayout newLayout
     ) {
-        transitionImageLayout(image, oldLayout, newLayout,
-                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
-                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
-                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
-                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE)
-        );
+        transitionImageLayout(image, oldLayout, newLayout, 0, -1);
     }
 
     /// Transitions the layout of an image on specific mip levels by blocking RW on all commands
-    /// This is a helper, not designed to be the most performant solution. See the other overloads for more granular control.
+    /// This is intended to be good enough, there are explicit overloads if you need better synchronization, but this should work for most conventional graphics and compute tasks. Worst case scenario (e.g., GENERAL or unknown src/dst), this blocks RW on all commands
     /// Requires synchronization2
     @Contract(mutates = "this")
     public void transitionImageLayout(
@@ -780,13 +775,33 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
             @NotNull VulkanicImageLayout newLayout,
             int baseMipLevel, int numMipLevels
     ) {
-        transitionImageLayout(image, oldLayout, newLayout,
-                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
-                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
-                EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS),
-                EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE),
-                baseMipLevel, numMipLevels
-        );
+        final EnumLongBitset<VulkanicPipelineStageFlag> srcStage;
+        final EnumLongBitset<VulkanicAccessFlag> srcAccess;
+        switch (oldLayout) {
+            case UNDEFINED, PRESENT_SRC_KHR -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.MEMORY_WRITE); }
+            case PREINITIALIZED -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.HOST); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.HOST_WRITE); }
+            case TRANSFER_DST_OPTIMAL -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_TRANSFER); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.TRANSFER_WRITE); }
+            case TRANSFER_SRC_OPTIMAL -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_TRANSFER); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.NONE); }
+            case SHADER_READ_ONLY_OPTIMAL, DEPTH_STENCIL_READ_ONLY_OPTIMAL -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_GRAPHICS, VulkanicPipelineStageFlag.COMPUTE_SHADER); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.NONE); }
+            case COLOR_ATTACHMENT_OPTIMAL -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.COLOR_ATTACHMENT_OUTPUT); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.COLOR_ATTACHMENT_WRITE); }
+            case DEPTH_STENCIL_ATTACHMENT_OPTIMAL -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.EARLY_FRAGMENT_TESTS, VulkanicPipelineStageFlag.LATE_FRAGMENT_TESTS); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.DEPTH_STENCIL_ATTACHMENT_WRITE); }
+            default -> { srcStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS); srcAccess = EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE); }
+        }
+
+        final EnumLongBitset<VulkanicPipelineStageFlag> dstStage;
+        final EnumLongBitset<VulkanicAccessFlag> dstAccess;
+        switch (newLayout) {
+            case PRESENT_SRC_KHR -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.NONE); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.NONE); }
+            case TRANSFER_DST_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_TRANSFER); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.TRANSFER_WRITE); }
+            case TRANSFER_SRC_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_TRANSFER); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.TRANSFER_READ); }
+            case SHADER_READ_ONLY_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_GRAPHICS, VulkanicPipelineStageFlag.COMPUTE_SHADER); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.SHADER_SAMPLED_READ, VulkanicAccessFlag.INPUT_ATTACHMENT_READ); }
+            case DEPTH_STENCIL_READ_ONLY_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.EARLY_FRAGMENT_TESTS, VulkanicPipelineStageFlag.LATE_FRAGMENT_TESTS, VulkanicPipelineStageFlag.ALL_GRAPHICS, VulkanicPipelineStageFlag.COMPUTE_SHADER); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.DEPTH_STENCIL_ATTACHMENT_READ, VulkanicAccessFlag.SHADER_SAMPLED_READ); }
+            case COLOR_ATTACHMENT_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.COLOR_ATTACHMENT_OUTPUT); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.COLOR_ATTACHMENT_READ, VulkanicAccessFlag.COLOR_ATTACHMENT_WRITE); }
+            case DEPTH_STENCIL_ATTACHMENT_OPTIMAL -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.EARLY_FRAGMENT_TESTS, VulkanicPipelineStageFlag.LATE_FRAGMENT_TESTS); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.DEPTH_STENCIL_ATTACHMENT_READ, VulkanicAccessFlag.DEPTH_STENCIL_ATTACHMENT_WRITE); }
+            default -> { dstStage = EnumLongBitset.of(VulkanicPipelineStageFlag.ALL_COMMANDS); dstAccess = EnumLongBitset.of(VulkanicAccessFlag.MEMORY_READ, VulkanicAccessFlag.MEMORY_WRITE); }
+        }
+
+        transitionImageLayout(image, oldLayout, newLayout, srcStage, srcAccess, dstStage, dstAccess, baseMipLevel, numMipLevels);
     }
 
     /// Transitions the layout of an image with more granular barrier controls
