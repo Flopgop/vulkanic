@@ -234,6 +234,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean scalarBlockLayout = false;
     @VulkanFeature(extension = EXTHostImageCopy.VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceHostImageCopyFeatures.class)
     private static final boolean hostImageCopy = false;
+    @VulkanFeature(featuresStruct = VkPhysicalDeviceFeatures2.class)
+    private static final boolean robustBufferAccess = false;
     @VulkanFeature(extension = KHRRobustness2.VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceRobustness2FeaturesKHR.class)
     private static final boolean robustBufferAccess2 = false;
     @VulkanFeature(extension = KHRRobustness2.VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, featuresStruct = VkPhysicalDeviceRobustness2FeaturesKHR.class)
