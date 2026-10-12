@@ -274,6 +274,8 @@ public final class VulkanicDeviceFeatures extends VulkanicFeaturesGenerated impl
     private static final boolean descriptorBuffer = false;
     @VulkanFeature(extension = KHR8bitStorage.VK_KHR_8BIT_STORAGE_EXTENSION_NAME, featuresStruct = VkPhysicalDevice8BitStorageFeaturesKHR.class)
     private static final boolean uniformAndStorageBuffer8BitAccess = false;
+    @VulkanFeature(extension = KHR16bitStorage.VK_KHR_16BIT_STORAGE_EXTENSION_NAME, featuresStruct = VkPhysicalDevice16BitStorageFeaturesKHR.class)
+    private static final boolean uniformAndStorageBuffer16BitAccess = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final List<NativeResource> pNextChain = new ArrayList<>();
