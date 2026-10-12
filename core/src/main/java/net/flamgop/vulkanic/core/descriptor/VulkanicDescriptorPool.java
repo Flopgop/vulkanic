@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor;
+package net.flamgop.vulkanic.core.descriptor;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.core.VulkanicObject;

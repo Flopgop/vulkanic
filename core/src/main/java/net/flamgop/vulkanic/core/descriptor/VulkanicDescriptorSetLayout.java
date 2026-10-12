@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor;
+package net.flamgop.vulkanic.core.descriptor;
 
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.core.VulkanicObject;
@@ -7,16 +7,14 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public final class VulkanicDescriptorSet implements AutoCloseable, VulkanicObject.Opaque {
+public final class VulkanicDescriptorSetLayout implements AutoCloseable, VulkanicObject.Opaque {
     private final VulkanicDevice device;
-    private final VulkanicDescriptorPool pool;
     private final long handle;
 
-    /// @see VulkanicDescriptorPool#allocate 
+    /// @see VulkanicDevice#createDescriptorSetLayout
     @ApiStatus.Internal
-    public VulkanicDescriptorSet(@NotNull VulkanicDevice device, @NotNull VulkanicDescriptorPool pool, long handle) {
+    public VulkanicDescriptorSetLayout(@NotNull VulkanicDevice device, long handle) {
         this.device = device;
-        this.pool = pool;
         this.handle = handle;
     }
 
@@ -28,11 +26,11 @@ public final class VulkanicDescriptorSet implements AutoCloseable, VulkanicObjec
 
     @Override
     public void close() {
-        if (pool.createInfo().flags().contains(VulkanicDescriptorPoolCreateFlag.FREE_DESCRIPTOR_SET)) device.freeDescriptorSets(pool, this);
+        device.destroyDescriptorSetLayout(this);
     }
 
     @Override
     public @NotNull VulkanicObjectType objectType() {
-        return VulkanicObjectType.DESCRIPTOR_SET;
+        return VulkanicObjectType.DESCRIPTOR_SET_LAYOUT;
     }
 }

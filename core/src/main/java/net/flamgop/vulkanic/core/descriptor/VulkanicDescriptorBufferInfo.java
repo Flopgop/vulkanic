@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor;
+package net.flamgop.vulkanic.core.descriptor;
 
 import net.flamgop.vulkanic.memory.VulkanicBuffer;
 import org.jetbrains.annotations.NotNull;

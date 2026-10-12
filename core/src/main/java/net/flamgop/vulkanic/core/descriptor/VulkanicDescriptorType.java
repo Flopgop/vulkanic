@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor;
+package net.flamgop.vulkanic.core.descriptor;
 
 import org.lwjgl.vulkan.*;
 

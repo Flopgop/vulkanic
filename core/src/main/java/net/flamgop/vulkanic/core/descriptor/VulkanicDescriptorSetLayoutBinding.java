@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor;
+package net.flamgop.vulkanic.core.descriptor;
 
 import net.flamgop.vulkanic.memory.image.sampler.VulkanicSampler;
 import net.flamgop.vulkanic.pipeline.VulkanicShaderStage;

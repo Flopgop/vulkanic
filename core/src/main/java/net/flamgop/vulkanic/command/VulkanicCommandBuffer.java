@@ -13,9 +13,9 @@ import net.flamgop.vulkanic.memory.copy.VulkanicImageCopy;
 import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.pipeline.*;
 import net.flamgop.vulkanic.memory.VulkanicBuffer;
-import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorSet;
-import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicHeapBindInfo;
-import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicPushDataInfo;
+import net.flamgop.vulkanic.core.descriptor.VulkanicDescriptorSet;
+import net.flamgop.vulkanic.core.descriptor.heap.VulkanicHeapBindInfo;
+import net.flamgop.vulkanic.core.descriptor.heap.VulkanicPushDataInfo;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicBlendConstants;
 import net.flamgop.vulkanic.math.VulkanicRect2D;
 import net.flamgop.vulkanic.pipeline.graphics.VulkanicStencilFaceFlag;
@@ -962,7 +962,7 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
             @NotNull VulkanicStridedDeviceAddressRegion callableShaderBindingTable,
             @NotNull VulkanicBuffer indirect
     ) {
-        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
+        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRaysIndirect requires the ray tracing pipeline feature");
         try (MemoryStack stack = MemoryStack.stackPush()) {
             KHRRayTracingPipeline.vkCmdTraceRaysIndirectKHR(
                     this.handle,
@@ -980,8 +980,37 @@ public final class VulkanicCommandBuffer implements AutoCloseable, VulkanicObjec
     @ApiStatus.Experimental
     @Contract(mutates = "this")
     public void setRayTracingPipelineStackSize(int pipelineStackSize) {
-        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#traceRays requires the ray tracing pipeline feature");
+        if (!device.features().supportsRayTracingPipeline()) throw new UnsupportedOperationException("VulkanicCommandBuffer#setRayTracingPipelineStackSize requires the ray tracing pipeline feature");
         KHRRayTracingPipeline.vkCmdSetRayTracingPipelineStackSizeKHR(this.handle, pipelineStackSize);
+    }
+
+    @SuppressWarnings("resource")
+    @Contract(mutates = "this")
+    public void bindDescriptorBuffers(@NotNull List<VulkanicBuffer> buffers) {
+        if (!device.features().supportsDescriptorBuffer()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindDescriptorBuffers requires the descriptor buffer feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkDescriptorBufferBindingInfoEXT.Buffer pBindingInfos = VkDescriptorBufferBindingInfoEXT.calloc(buffers.size(), stack);
+            for (int i = 0; i < buffers.size(); i++) {
+                VulkanicBuffer buffer = buffers.get(i);
+                pBindingInfos.get(i)
+                        .sType$Default()
+                        .address$(buffer.deviceAddress())
+                        .usage(buffer.createInfo().usage().mask());
+            }
+            EXTDescriptorBuffer.vkCmdBindDescriptorBuffersEXT(this.handle, pBindingInfos);
+        }
+    }
+
+    @Contract(mutates = "this")
+    public void setDescriptorBufferOffsets(@NotNull VulkanicPipelineBindPoint bindPoint, @NotNull VulkanicPipelineLayout layout, int firstSet, int @NotNull  [] bufferIndices, long @NotNull  [] offsets) {
+        if (!device.features().supportsDescriptorBuffer()) throw new UnsupportedOperationException("VulkanicCommandBuffer#setDescriptorBufferOffsets requires the descriptor buffer feature");
+        EXTDescriptorBuffer.vkCmdSetDescriptorBufferOffsetsEXT(this.handle, bindPoint.qualifier(), layout.handle(), firstSet, bufferIndices, offsets);
+    }
+
+    @Contract(mutates = "this")
+    public void bindDescriptorBufferEmbeddedSamplers(@NotNull VulkanicPipelineBindPoint bindPoint, @NotNull VulkanicPipelineLayout layout, int set) {
+        if (!device.features().supportsDescriptorBuffer()) throw new UnsupportedOperationException("VulkanicCommandBuffer#bindDescriptorBufferEmbeddedSamplers requires the descriptor buffer feature");
+        EXTDescriptorBuffer.vkCmdBindDescriptorBufferEmbeddedSamplersEXT(this.handle, bindPoint.qualifier(), layout.handle(), set);
     }
 
     @ApiStatus.Internal

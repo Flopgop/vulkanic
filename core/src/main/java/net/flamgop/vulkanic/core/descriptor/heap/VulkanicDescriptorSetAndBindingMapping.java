@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor.heap;
+package net.flamgop.vulkanic.core.descriptor.heap;
 
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.lwjgl.system.MemoryStack;

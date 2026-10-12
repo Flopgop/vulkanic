@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor.heap;
+package net.flamgop.vulkanic.core.descriptor.heap;
 
 import org.lwjgl.vulkan.EXTDescriptorHeap;
 

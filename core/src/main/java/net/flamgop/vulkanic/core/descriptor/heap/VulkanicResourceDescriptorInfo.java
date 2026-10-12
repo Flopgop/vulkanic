@@ -1,6 +1,6 @@
-package net.flamgop.vulkanic.pipeline.descriptor.heap;
+package net.flamgop.vulkanic.core.descriptor.heap;
 
-import net.flamgop.vulkanic.pipeline.descriptor.VulkanicDescriptorType;
+import net.flamgop.vulkanic.core.descriptor.VulkanicDescriptorType;
 import org.jetbrains.annotations.NotNull;
 
 public record VulkanicResourceDescriptorInfo(@NotNull VulkanicDescriptorType type, @NotNull VulkanicResourceDescriptorData data) {

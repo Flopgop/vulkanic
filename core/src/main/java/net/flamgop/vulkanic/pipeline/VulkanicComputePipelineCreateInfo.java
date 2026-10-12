@@ -1,7 +1,7 @@
 package net.flamgop.vulkanic.pipeline;
 
 import net.flamgop.vulkanic.core.feature.VulkanicDeviceFeatures;
-import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
+import net.flamgop.vulkanic.core.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.util.EnumIntBitset;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

@@ -3,7 +3,7 @@ package net.flamgop.vulkanic.pipeline;
 import net.flamgop.vulkanic.core.VulkanicDevice;
 import net.flamgop.vulkanic.exception.VulkanException;
 import net.flamgop.vulkanic.memory.format.VulkanicFormat;
-import net.flamgop.vulkanic.pipeline.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
+import net.flamgop.vulkanic.core.descriptor.heap.VulkanicDescriptorSetAndBindingMapping;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.pipeline.graphics.renderpass.VulkanicRenderPass;
 import net.flamgop.vulkanic.util.EnumIntBitset;

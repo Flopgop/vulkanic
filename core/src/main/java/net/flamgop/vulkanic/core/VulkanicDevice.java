@@ -2,6 +2,7 @@ package net.flamgop.vulkanic.core;
 
 import net.flamgop.vulkanic.command.*;
 import net.flamgop.vulkanic.core.debug.VulkanicDebugObjectNameInfo;
+import net.flamgop.vulkanic.core.descriptor.*;
 import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultAddressInfo;
 import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultAddressType;
 import net.flamgop.vulkanic.core.fault.VulkanicDeviceFaultInfo;
@@ -18,8 +19,7 @@ import net.flamgop.vulkanic.memory.image.*;
 import net.flamgop.vulkanic.memory.image.sampler.*;
 import net.flamgop.vulkanic.memory.platform.VulkanicImportInfo;
 import net.flamgop.vulkanic.pipeline.*;
-import net.flamgop.vulkanic.pipeline.descriptor.*;
-import net.flamgop.vulkanic.pipeline.descriptor.heap.*;
+import net.flamgop.vulkanic.core.descriptor.heap.*;
 import net.flamgop.vulkanic.pipeline.graphics.*;
 import net.flamgop.vulkanic.pipeline.graphics.renderpass.*;
 import net.flamgop.vulkanic.swapchain.*;
@@ -1506,6 +1506,36 @@ public final class VulkanicDevice implements AutoCloseable, VulkanicObject.Typed
                     addressInfos,
                     vendorInfos,
                     MemorySegment.ofAddress(pFaults.pVendorBinaryData())
+            );
+        }
+    }
+
+    public @NotNull VulkanicDeviceSize getDescriptorSetLayoutSize(@NotNull VulkanicDescriptorSetLayout layout) {
+        if (!features.supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicDevice#getDescriptorSetLayoutSize requires the descriptor buffer feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pLayoutSize = stack.callocLong(1);
+            EXTDescriptorBuffer.vkGetDescriptorSetLayoutSizeEXT(this.handle, layout.handle(), pLayoutSize);
+            return VulkanicDeviceSize.ofBytes(pLayoutSize.get(0));
+        }
+    }
+
+    public @NotNull VulkanicDeviceSize getDescriptorSetLayoutBindingOffset(@NotNull VulkanicDescriptorSetLayout layout, int binding) {
+        if (!features.supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicDevice#getDescriptorSetLayoutBindingOffset requires the descriptor buffer feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer pOffset = stack.callocLong(1);
+            EXTDescriptorBuffer.vkGetDescriptorSetLayoutBindingOffsetEXT(this.handle, layout.handle(), binding, pOffset);
+            return VulkanicDeviceSize.ofBytes(pOffset.get(0));
+        }
+    }
+
+    public void getDescriptor(@NotNull VulkanicDescriptorGetInfo descriptorInfo, @NotNull ByteBuffer pDescriptor) {
+        if (!features.supportsDescriptorHeap()) throw new UnsupportedOperationException("VulkanicDevice#getDescriptor requires the descriptor buffer feature");
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            EXTDescriptorBuffer.vkGetDescriptorEXT(this.handle, VkDescriptorGetInfoEXT.calloc(stack)
+                    .sType$Default()
+                    .type(descriptorInfo.type().qualifier())
+                    .data(d -> descriptorInfo.data().get(d)),
+                    pDescriptor
             );
         }
     }

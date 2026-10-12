@@ -1,4 +1,4 @@
-package net.flamgop.vulkanic.pipeline.descriptor.heap;
+package net.flamgop.vulkanic.core.descriptor.heap;
 
 import net.flamgop.vulkanic.memory.image.sampler.VulkanicSamplerCreateInfo;
 import org.jetbrains.annotations.NotNull;
